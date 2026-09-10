@@ -15,7 +15,7 @@ async function expectNoOverflow(page: Page) {
 
 test('primary routes remain responsive and visually coherent', async ({ page }, testInfo) => {
   await seed(page);
-  for (const route of ['home','discover','inbox','profile','workspace']) {
+  for (const route of ['home','discover','tasks','inbox','profile','workspace']) {
     await page.goto(`/${route}`);
     await expect(page.locator('.app-shell')).toBeVisible();
     await expectNoOverflow(page);
@@ -31,8 +31,18 @@ test('dashboard meetings remain separate from tasks', async ({ page }, testInfo)
   await expect(page.getByRole('heading', { name: 'Upcoming meetings' })).toBeVisible();
   await expect(page.locator('body')).not.toContainText('Your tasks');
   await expectNoOverflow(page);
-  await page.waitForLoadState('networkidle');
+  await page.waitForTimeout(750);
   await page.screenshot({ path: `${evidenceRoot}/${testInfo.project.name}-dashboard-meetings.png`, fullPage: true });
+});
+
+test('a message can become a prefilled task', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'mobile-390', 'One representative contextual task flow is sufficient.');
+  await seed(page);
+  await page.goto('/inbox');
+  await page.getByRole('button', { name: 'Open conversation with Amara K.' }).click();
+  await page.getByRole('button', { name: 'Turn latest message into a task' }).click();
+  await expect(page).toHaveURL(/\/tasks/);
+  await expect(page.getByLabel('What needs to move forward?')).toHaveValue(/editorial in the dunes/i);
 });
 
 test('first-run onboarding validates and preserves choices', async ({ page }, testInfo) => {

@@ -1,9 +1,10 @@
+import { useState } from 'react';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import Tasks from '../tasks/Tasks';
 import { defaultOnboardingProfile } from '../onboarding/model';
-import { taskStorageKey } from '../tasks/model';
+import { taskStorageKey, type TaskDraft } from '../tasks/model';
 
 describe('Tasks experience', () => {
   beforeEach(() => localStorage.removeItem(taskStorageKey));
@@ -27,5 +28,17 @@ describe('Tasks experience', () => {
     expect(screen.getByRole('dialog', { name: 'Review the first cut' })).toBeVisible();
     await user.click(screen.getByRole('checkbox', { name: 'Add time-coded notes' }));
     expect(screen.getByText('2 of 2 steps complete')).toBeVisible();
+  });
+
+  it('preserves a one-time contextual draft until it is submitted', async () => {
+    const user = userEvent.setup();
+    function ContextualTasks() {
+      const [draft, setDraft] = useState<TaskDraft | null>({ source: 'message', title: 'Reply with edit notes', relatedId: 'leo' });
+      return <Tasks notify={vi.fn()} profile={defaultOnboardingProfile} pendingDraft={draft} onDraftConsumed={() => setDraft(null)} />;
+    }
+    render(<ContextualTasks />);
+
+    await user.click(screen.getByRole('button', { name: 'Add task' }));
+    expect(screen.getByText('message')).toBeVisible();
   });
 });

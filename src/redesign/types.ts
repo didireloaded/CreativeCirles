@@ -1,6 +1,7 @@
 import type { OnboardingProfile } from './onboarding/model';
+import type { TaskDraft } from './tasks/model';
 
-export type Page = 'home' | 'discover' | 'inbox' | 'profile' | 'workspace';
+export type Page = 'home' | 'discover' | 'tasks' | 'inbox' | 'profile' | 'workspace';
 export interface ScreenProps {
   notify: (message: string) => void;
   navigate: (page: Page) => void;
@@ -9,6 +10,7 @@ export interface ScreenProps {
   profile: OnboardingProfile;
   editPreferences: () => void;
   openNotifications: () => void;
+  openTaskDraft: (draft: TaskDraft) => void;
 }
 export interface Post {
   id: string;

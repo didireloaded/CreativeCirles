@@ -24,23 +24,25 @@ export default function Tasks({ notify, profile, pendingDraft, onDraftConsumed }
   const [selected, setSelected] = useState<string | null>(null);
   const [showCreate, setShowCreate] = useState(false);
   const [title, setTitle] = useState('');
+  const [draftContext, setDraftContext] = useState<TaskDraft | null>(null);
   const [feedback, setFeedback] = useState('');
 
   useEffect(() => { writeTasks(tasks); }, [tasks]);
   useEffect(() => {
     if (!pendingDraft) return;
     setTitle(pendingDraft.title);
+    setDraftContext(pendingDraft);
     setShowCreate(true);
     onDraftConsumed();
   }, [pendingDraft, onDraftConsumed]);
 
-  const today = new Date();
+  const today = useMemo(() => new Date(), []);
   const week = Array.from({ length: 7 }, (_, index) => { const date = new Date(today); date.setDate(today.getDate() + index - 2); return date; });
   const visibleTasks = useMemo(() => tasks.filter(task => {
     if (filter !== 'all' && task.status !== filter) return false;
     if (view === 'Today' && task.dueAt && dayKey(new Date(task.dueAt)) !== dayKey(today) && task.status !== 'overdue') return false;
     return true;
-  }), [filter, tasks, view]);
+  }), [filter, tasks, today, view]);
   const done = tasks.filter(task => task.status === 'completed').length;
   const inProgress = tasks.filter(task => task.status === 'in-progress').length;
   const overdue = tasks.filter(task => task.status === 'overdue').length;
@@ -62,9 +64,10 @@ export default function Tasks({ notify, profile, pendingDraft, onDraftConsumed }
     event.preventDefault();
     const cleanTitle = title.trim();
     if (!cleanTitle) return;
-    const task = createTask({ source: pendingDraft?.source || 'manual', title: cleanTitle, relatedId: pendingDraft?.relatedId, dueAt: pendingDraft?.dueAt, assigneeIds: pendingDraft?.assigneeIds });
+    const task = createTask({ source: draftContext?.source || 'manual', title: cleanTitle, relatedId: draftContext?.relatedId, dueAt: draftContext?.dueAt, assigneeIds: draftContext?.assigneeIds });
     setTasks(current => [task, ...current]);
     setTitle('');
+    setDraftContext(null);
     setShowCreate(false);
     setView('All tasks');
     setFeedback('Task added');

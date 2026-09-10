@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { ArrowLeft, ArrowUpRight, Check, MessageCircle, Search, Send, Users, X } from 'lucide-react';
+import { ArrowLeft, ArrowUpRight, Check, ListPlus, MessageCircle, Search, Send, Users, X } from 'lucide-react';
 import { creators, photos } from './data';
 import type { ScreenProps } from './types';
 import './inbox.css';
@@ -34,7 +34,7 @@ function readLocal<T>(key: string, fallback: T): T {
   try { const stored = localStorage.getItem(key); return stored ? JSON.parse(stored) as T : fallback; } catch { return fallback; }
 }
 
-export default function Inbox({ notify }: ScreenProps) {
+export default function Inbox({ notify, openTaskDraft }: ScreenProps) {
   const [tab, setTab] = useState<'messages' | 'collaborations'>('messages');
   const [conversations, setConversations] = useState<Conversation[]>(() => readLocal('cc-preview-conversations', conversationSeed));
   const [statuses, setStatuses] = useState<Record<string, 'accepted' | 'declined'>>(() => readLocal('cc-preview-requests', {}));
@@ -120,7 +120,7 @@ export default function Inbox({ notify }: ScreenProps) {
       </aside>
 
       <div className="in-detail" aria-label={`Conversation with ${active.name}`}>
-        <header className="in-detail-head"><button className="icon-button in-back" onClick={() => setMobileOpen(false)} aria-label="Back to messages"><ArrowLeft size={21} /></button><img className="avatar" src={active.image} alt="" /><div><h2>{active.name}</h2><p>{active.role} <span>· Sample creator</span></p></div></header>
+        <header className="in-detail-head"><button className="icon-button in-back" onClick={() => setMobileOpen(false)} aria-label="Back to messages"><ArrowLeft size={21} /></button><img className="avatar" src={active.image} alt="" /><div><h2>{active.name}</h2><p>{active.role} <span>· Sample creator</span></p></div><button className="icon-button in-task-action" aria-label="Turn latest message into a task" onClick={() => openTaskDraft({ source: 'message', relatedId: active.id, title: `Follow up: ${active.messages.at(-1)?.body || active.title}`, assigneeIds: [active.id] })}><ListPlus size={19} /></button></header>
         <div className="in-message-thread" ref={messagesEnd}>
           <div className="in-conversation-intro"><span className="in-conversation-symbol"><Users size={25} strokeWidth={1.4} /></span><p className="eyebrow">BETTER TOGETHER</p><h3>{active.title}</h3><p>This is where an idea becomes a collaboration.</p></div>
           <div className="in-date-divider"><span>Preview conversation</span></div>

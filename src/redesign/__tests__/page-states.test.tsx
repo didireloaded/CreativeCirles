@@ -11,6 +11,7 @@ const props = {
   openDrafts: vi.fn(),
   editPreferences: vi.fn(),
   openNotifications: vi.fn(),
+  openTaskDraft: vi.fn(),
   profile: { ...defaultOnboardingProfile, completed: true },
 };
 
