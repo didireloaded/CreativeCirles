@@ -4,6 +4,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import PostDetail from '../details/PostDetail';
 import CreatorDetail from '../details/CreatorDetail';
 import CommunityDetail from '../details/CommunityDetail';
+import StoryViewer from '../details/StoryViewer';
+import NotificationPanel from '../details/NotificationPanel';
 import type { Community, CreativePost, Creator } from '../types';
 
 const creator: Creator = {
@@ -49,5 +51,26 @@ describe('creative detail flows', () => {
     await user.click(screen.getByRole('button', { name: 'Join community' }));
     expect(screen.getByRole('button', { name: 'Leave community' })).toBeVisible();
     expect(JSON.parse(localStorage.getItem('circle:joined-communities') || '[]')).toContain('frame-circle');
+  });
+});
+
+describe('stories and notifications', () => {
+  it('moves through stories and closes after the final item', async () => {
+    const user = userEvent.setup(); const close = vi.fn();
+    render(<StoryViewer open stories={[{ id:'one', creator, image:'/one.jpg', label:'First frame' }, { id:'two', creator, image:'/two.jpg', label:'Second frame' }]} initialIndex={0} onClose={close} />);
+    expect(screen.getByText('First frame')).toBeVisible();
+    await user.click(screen.getByRole('button', { name: 'Next story' }));
+    expect(screen.getByText('Second frame')).toBeVisible();
+    await user.click(screen.getByRole('button', { name: 'Next story' }));
+    expect(close).toHaveBeenCalled();
+  });
+
+  it('marks notifications read and explains an empty inbox', async () => {
+    const user = userEvent.setup();
+    const { rerender } = render(<NotificationPanel open items={[{ id:'comment', group:'Today', title:'Amara commented on your project', detail:'The framing feels intentional.', time:'12 min' }]} onClose={vi.fn()} />);
+    await user.click(screen.getByRole('button', { name: 'Mark all as read' }));
+    expect(localStorage.getItem('circle:read-notifications')).toContain('comment');
+    rerender(<NotificationPanel open items={[]} onClose={vi.fn()} />);
+    expect(screen.getByText('You’re all caught up. Collaboration, comment, and project updates will appear here.')).toBeVisible();
   });
 });

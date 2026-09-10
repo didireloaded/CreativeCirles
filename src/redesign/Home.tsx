@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { Bookmark, Heart, MessageCircle, MoreHorizontal, Play, Plus, Share2, Sparkles, ArrowUpRight, BadgeCheck, EyeOff, Flag, UserRound } from 'lucide-react';
+import { Bookmark, Heart, MessageCircle, MoreHorizontal, Play, Plus, Share2, Sparkles, ArrowUpRight, BadgeCheck, EyeOff, Flag, UserRound, Bell } from 'lucide-react';
 import { creators, photos } from './data';
 import type { CreativePost, Creator, ScreenProps } from './types';
 import { EmptyState, ErrorState, Skeleton } from './components/AsyncState';
 import PostDetail from './details/PostDetail';
 import CreatorDetail from './details/CreatorDetail';
+import StoryViewer, { type Story } from './details/StoryViewer';
 import './home.css';
 
 const posts: CreativePost[] = [
@@ -12,8 +13,9 @@ const posts: CreativePost[] = [
   { id:'fashion',authorId:'nia',author:'Nia S.',handle:'nia.studio',discipline:'Fashion designer',avatar:creators[2].image,image:photos.fashion,title:'Form, movement, memory',caption:'A first look at shapes drawn from the everyday things we carry with us.',category:'Fashion',location:'Sample studio',likes:176,comments:12 },
   { id:'film',authorId:'leo',author:'Leo M.',handle:'framesbyleo',discipline:'Filmmaker',avatar:creators[1].image,image:photos.camera,title:'The frame before the story',caption:'Some scenes arrive before their meaning does. Keeping this one close for the next short film.',category:'Film',location:'Namibia',likes:142,comments:9,project:true },
 ];
+const stories: Story[] = creators.map((creator,index)=>({id:`story-${creator.id}`,creator,image:[photos.desert,photos.fashion,photos.art,photos.architecture,photos.ocean][index],label:['Golden light, before the road wakes.','Shapes in motion.','Color studies from today.','Looking up, looking closer.','A field note from the water.'][index]}));
 
-export default function Home({ notify, navigate, openCreate }: ScreenProps) {
+export default function Home({ notify, navigate, openCreate, openNotifications }: ScreenProps) {
   const [feed,setFeed]=useState<'Following'|'Discover'>('Following');
   const [liked,setLiked]=useState<string[]>([]); const [saved,setSaved]=useState<string[]>([]); const [story,setStory]=useState<number|null>(null); const [postMenu,setPostMenu]=useState<string|null>(null);
   const [selectedPost, setSelectedPost] = useState<CreativePost | null>(null);
@@ -21,11 +23,10 @@ export default function Home({ notify, navigate, openCreate }: ScreenProps) {
   const previewState = new URLSearchParams(window.location.search).get('state');
   const toggle=(id:string, values:string[], setter:(v:string[])=>void,label:string)=>{const active=values.includes(id);setter(active?values.filter(x=>x!==id):[...values,id]);notify(active?`${label} removed.`:`${label} saved on this device.`)};
   return <div className="home-page">
-    <header className="home-top"><button className="home-identity" onClick={()=>navigate('profile')}><img src={photos.portrait} alt="Your profile"/><span><strong>Jordan K. <BadgeCheck size={16}/></strong><small>@jordan.creates</small></span></button><div className="home-header-actions"><button className="icon-button" aria-label="Open inbox" onClick={()=>navigate('inbox')}><MessageCircle/></button><button className="workspace-link" aria-label="My workspace" onClick={()=>navigate('workspace')}><Sparkles size={20}/></button></div></header>
+    <header className="home-top"><button className="home-identity" onClick={()=>navigate('profile')}><img src={photos.portrait} alt="Your profile"/><span><strong>Jordan K. <BadgeCheck size={16}/></strong><small>@jordan.creates</small></span></button><div className="home-header-actions"><button className="icon-button" aria-label="Notifications" onClick={openNotifications}><Bell/></button><button className="icon-button" aria-label="Open inbox" onClick={()=>navigate('inbox')}><MessageCircle/></button><button className="workspace-link" aria-label="My workspace" onClick={()=>navigate('workspace')}><Sparkles size={20}/></button></div></header>
     <div className="home-tabs" role="tablist">{(['Following','Discover'] as const).map(x=><button key={x} role="tab" aria-selected={feed===x} onClick={()=>setFeed(x)}>{x}</button>)}</div>
     <button className="home-composer" onClick={openCreate} aria-label="Share what is on your mind"><img src={photos.portrait} alt=""/><span>What’s on your mind?</span><Plus size={19}/></button>
     <section className="stories" aria-label="Sample stories"><button className="story add" onClick={openCreate}><span><Plus/></span><b>Add story</b></button>{creators.map((c,i)=><button className="story" key={c.handle} onClick={()=>setStory(i)}><span><img src={c.image} alt=""/></span><b>{c.name.split(' ')[0]}</b></button>)}</section>
-    {story!==null&&<div className="story-view" role="dialog" aria-modal="true" aria-label={`Sample story by ${creators[story].name}`} onClick={()=>setStory(null)}><img src={[photos.desert,photos.fashion,photos.art,photos.architecture,photos.ocean][story]} alt="Sample creative story"/><div><img src={creators[story].image} alt=""/><strong>{creators[story].name}</strong><span>Sample story</span></div><button onClick={()=>setStory(null)} aria-label="Close story">×</button></div>}
     <div className="home-layout"><main className="post-list">
       {previewState === 'loading' ? <><span className="ds-sr-only" role="status">Loading creative work</span><Skeleton variant="feed" count={2} /></> : previewState === 'error' ? <ErrorState title="Couldn’t load creative work" description="Check your connection and try again." onRetry={() => window.history.replaceState({}, '', window.location.pathname)} /> : previewState === 'empty' ? <EmptyState title="Your circle is ready for its first story." description="Follow creatives or explore work to shape your feed." action={{ label: 'Explore creatives', onClick: () => navigate('discover') }} /> : <><span className="sample-label">Sample feed</span>{[...(feed==='Following'?posts:[posts[1],posts[2],posts[0]])].map(post=><article className="post" key={post.id}>
       <header><button className="post-author-button" onClick={()=>setSelectedCreator(creators.find(creator=>creator.id===post.authorId) || null)}><img src={post.avatar} alt=""/><span><strong>{post.author}</strong><small>{post.discipline} · @{post.handle}</small></span></button><button className="icon-button" onClick={()=>setPostMenu(postMenu===post.id?null:post.id)} aria-label={`More options for ${post.title}`} aria-expanded={postMenu===post.id}><MoreHorizontal/></button>{postMenu===post.id&&<div className="post-menu" role="menu"><button onClick={()=>{setPostMenu(null);notify('You will see more work like this.')}}><Sparkles size={15}/> Show more like this</button><button onClick={()=>{setPostMenu(null);notify('This post was hidden in the preview.')}}><EyeOff size={15}/> Hide this post</button><button onClick={()=>{setPostMenu(null);notify('Report flow will connect during moderation.')}}><Flag size={15}/> Report post</button><button onClick={()=>{setPostMenu(null);setSelectedCreator(creators.find(creator=>creator.id===post.authorId) || null)}}><UserRound size={15}/> View creator</button></div>}</header>
@@ -34,5 +35,6 @@ export default function Home({ notify, navigate, openCreate }: ScreenProps) {
     </article>)}</>}</main><aside className="home-rail"><p className="eyebrow">AROUND THE CIRCLE</p><h2>People worth<br />meeting.</h2>{creators.slice(1,4).map(c=><button key={c.handle} onClick={()=>setSelectedCreator(c)}><img src={c.image} alt=""/><span><strong>{c.name}</strong><small>{c.role}</small></span><Plus size={17}/></button>)}<div className="home-note"><span>✳</span><p>Different places.<br/>Different perspectives.<br/><strong>One creative circle.</strong></p></div></aside></div>
     <PostDetail open={Boolean(selectedPost)} post={selectedPost} creator={creators.find(creator => creator.id === selectedPost?.authorId) || null} onClose={()=>setSelectedPost(null)} notify={notify} />
     <CreatorDetail open={Boolean(selectedCreator)} creator={selectedCreator} onClose={()=>setSelectedCreator(null)} onCollaborate={creator=>{setSelectedCreator(null);notify(`Collaboration request to ${creator.name} saved locally.`)}} />
+    <StoryViewer open={story !== null} stories={stories} initialIndex={story ?? 0} onClose={()=>setStory(null)} />
   </div>;
 }

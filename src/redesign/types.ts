@@ -8,6 +8,7 @@ export interface ScreenProps {
   openDrafts: () => void;
   profile: OnboardingProfile;
   editPreferences: () => void;
+  openNotifications: () => void;
 }
 export interface Post {
   id: string;
