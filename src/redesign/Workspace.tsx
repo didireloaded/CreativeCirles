@@ -2,9 +2,11 @@ import { useEffect, useRef, useState } from 'react';
 import { ArrowDownRight, ArrowRight, ArrowUpRight, CalendarDays, Check, ChevronLeft, ChevronRight, Clock3, Film, Image, MapPin, Plus, SlidersHorizontal, X } from 'lucide-react';
 import { creators, photos } from './data';
 import type { ScreenProps } from './types';
+import MeetingsView from './dashboard/MeetingsView';
 import './workspace.css';
 
-type WorkspaceView = 'Overview' | 'Calendar' | 'Insights';
+type WorkspaceView = 'Overview' | 'Meetings' | 'Calendar' | 'Insights';
+const workspaceViews: WorkspaceView[] = ['Overview', 'Meetings', 'Calendar', 'Insights'];
 type Reminder = { id: string; title: string; date: string; time: string; done: boolean; sample?: boolean };
 const reminderKey = 'creative-circle-workspace-reminders-v1';
 const dateKey = (date: Date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
@@ -30,7 +32,7 @@ function formatReminderDate(value: string, time: string) {
   return `${date} · ${time}`;
 }
 
-export default function Workspace({ notify, navigate, openCreate, openDrafts }: ScreenProps) {
+export default function Workspace({ notify, navigate, openCreate, openDrafts, profile }: ScreenProps) {
   const [view, setView] = useState<WorkspaceView>('Overview');
   const [selectedDate, setSelectedDate] = useState(() => new Date());
   const [calendarMode, setCalendarMode] = useState<'Weekly' | 'Monthly'>('Weekly');
@@ -103,8 +105,8 @@ export default function Workspace({ notify, navigate, openCreate, openDrafts }: 
   }
 
   return <div className="ws-page">
-    <header className="ws-page-header"><div><p className="eyebrow">YOUR CREATIVE DAY, IN FOCUS</p><h1>{view === 'Overview' ? 'Good morning, Jordan!' : view}</h1></div><button className="button secondary ws-new-reminder" onClick={openReminderForm}><Plus size={17} /><span>New reminder</span></button></header>
-    <div className="ws-view-tabs" role="tablist" aria-label="Workspace views">{(['Overview', 'Calendar', 'Insights'] as const).map(tab => <button id={`ws-tab-${tab}`} aria-controls={`ws-panel-${tab}`} key={tab} role="tab" aria-selected={view === tab} tabIndex={view === tab ? 0 : -1} onKeyDown={event => { if (event.key === 'ArrowRight' || event.key === 'ArrowLeft') { event.preventDefault(); const tabs: WorkspaceView[] = ['Overview', 'Calendar', 'Insights']; const next = tabs[(tabs.indexOf(tab) + (event.key === 'ArrowRight' ? 1 : 2)) % 3]; setView(next); requestAnimationFrame(() => document.getElementById(`ws-tab-${next}`)?.focus()); } }} onClick={() => setView(tab)}>{tab}</button>)}</div>
+    <header className="ws-page-header"><div><p className="eyebrow">YOUR CREATIVE DAY, IN FOCUS</p><h1>{view === 'Overview' ? `Good morning, ${profile.displayName || 'Jordan'}!` : view}</h1></div><button className="button secondary ws-new-reminder" onClick={openReminderForm}><Plus size={17} /><span>New reminder</span></button></header>
+    <div className="ws-view-tabs" role="tablist" aria-label="Workspace views">{workspaceViews.map(tab => <button id={`ws-tab-${tab}`} aria-controls={`ws-panel-${tab}`} key={tab} role="tab" aria-selected={view === tab} tabIndex={view === tab ? 0 : -1} onKeyDown={event => { if (event.key === 'ArrowRight' || event.key === 'ArrowLeft') { event.preventDefault(); const direction = event.key === 'ArrowRight' ? 1 : workspaceViews.length - 1; const next = workspaceViews[(workspaceViews.indexOf(tab) + direction) % workspaceViews.length]; setView(next); requestAnimationFrame(() => document.getElementById(`ws-tab-${next}`)?.focus()); } }} onClick={() => setView(tab)}>{tab}</button>)}</div>
 
     {showReminderForm && <form className="ws-reminder-form" onSubmit={addReminder}>
       <div className="ws-form-heading"><div><h2>A little nudge for later</h2><p>Saved on this device. Push notifications are coming later.</p></div><button type="button" className="icon-button" aria-label="Close reminder form" onClick={() => setShowReminderForm(false)}><X size={19} /></button></div>
@@ -114,7 +116,7 @@ export default function Workspace({ notify, navigate, openCreate, openDrafts }: 
 
     <div id={`ws-panel-${view}`} role="tabpanel" aria-labelledby={`ws-tab-${view}`}>
       {view === 'Overview' && <>
-        <div className="ws-greeting"><div><h2>Your creative workspace</h2><p>{today.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })} <span>—</span> Good to see you, Jordan.</p></div><span className="sample-label">Sample workspace</span></div>
+        <div className="ws-greeting"><div><h2>Your creative workspace</h2><p>{today.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })} <span>—</span> Good to see you, {profile.displayName || 'Jordan'}.</p></div><span className="sample-label">Sample workspace</span></div>
         <div className="ws-stats" aria-label="Sample workspace activity"><div><strong>03</strong><span>Active projects</span><i className="ws-stat-dot" /></div><div><strong>{String(todayReminders.filter(item => !item.done).length).padStart(2, '0')}</strong><span>Reminders today</span><i className="ws-stat-dot ws-dot-orange" /></div><div><strong>05</strong><span>Creative collaborators</span><i className="ws-stat-dot ws-dot-lilac" /></div></div>
         <div className="ws-layout"><div className="ws-main-column">
           <section className="ws-collaborators"><div className="section-heading"><h2>Collaborators</h2><button className="ws-text-button" onClick={() => navigate('discover')}>Find creators <ArrowUpRight size={15} /></button></div><div className="ws-creator-row">{creators.slice(1).map((creator, index) => <button key={creator.handle} className={`ws-creator ${selectedCreator === index + 1 ? 'is-active' : ''}`} onClick={() => setSelectedCreator(selectedCreator === index + 1 ? null : index + 1)} aria-expanded={selectedCreator === index + 1}><div className="ws-creator-image"><img src={creator.image} alt="" /><span>{creator.name}</span></div><span>{creator.role}</span></button>)}</div><button className="ws-add-idea" onClick={()=>navigate('discover')}><Plus size={15}/> Add collaborator</button>{currentCreator && <div className="ws-creator-detail"><div><strong>{currentCreator.name}</strong><p>{currentCreator.role} · @{currentCreator.handle}</p></div><button className="ws-text-button" onClick={() => navigate('discover')}>Explore the circle <ArrowRight size={16} /></button></div>}</section>
@@ -125,6 +127,8 @@ export default function Workspace({ notify, navigate, openCreate, openDrafts }: 
           <section className="ws-drafts"><div className="section-heading"><h2>Room for an idea</h2><span className="ws-draft-mark">✳</span></div><p>The next great thing starts<br />with a little something.</p><button className="ws-draft-card" onClick={openDrafts}><span className="ws-draft-label"><span className="ws-draft-status" /> YOUR CREATIVE NOTEBOOK</span><h3>Keep a thought.<br />Make it happen.</h3><div className="ws-draft-images"><img src={photos.ocean} alt="Ocean waves for visual inspiration" /><img src={photos.art} alt="Colorful abstract art for visual inspiration" /></div><span className="ws-draft-link">Open saved ideas <ArrowUpRight size={18} /></span></button><button className="ws-add-idea" onClick={openCreate}><Plus size={16} /> Start something new</button></section>
         </aside></div>
       </>}
+
+      {view === 'Meetings' && <MeetingsView notify={notify} profile={profile} />}
 
       {view === 'Calendar' && <div className="ws-calendar-layout"><section className="ws-calendar-full"><div className="ws-view-intro"><p className="eyebrow">A LITTLE SPACE TO PLAN</p><h2>Your rhythm, your calendar.</h2><p>Keep the important things in sight.</p></div>{calendar()}<div className="ws-calendar-legend"><span /><p>Upcoming reminder</p><span className="ws-legend-today" /><p>Today</p></div></section><section className="ws-schedule"><div className="section-heading"><div><p className="eyebrow">ON THE AGENDA</p><h2>{selectedDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'long' })}</h2></div><button className="icon-button" aria-label="Add reminder for selected date" onClick={openReminderForm}><Plus size={19} /></button></div>{reminderList(calendarReminders)}<button className="ws-add-idea" onClick={openReminderForm}><Plus size={16} /> Add a reminder</button><p className="ws-storage-note">Your own reminders stay on this device. Sample reminders are marked in the list.</p></section></div>}
 

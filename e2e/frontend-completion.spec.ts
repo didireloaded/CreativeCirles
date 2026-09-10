@@ -23,6 +23,18 @@ test('primary routes remain responsive and visually coherent', async ({ page }, 
   }
 });
 
+test('dashboard meetings remain separate from tasks', async ({ page }, testInfo) => {
+  test.skip(!['mobile-390', 'desktop'].includes(testInfo.project.name), 'Capture the mobile and desktop compositions.');
+  await seed(page);
+  await page.goto('/workspace');
+  await page.getByRole('tab', { name: 'Meetings' }).click();
+  await expect(page.getByRole('heading', { name: 'Upcoming meetings' })).toBeVisible();
+  await expect(page.locator('body')).not.toContainText('Your tasks');
+  await expectNoOverflow(page);
+  await page.waitForLoadState('networkidle');
+  await page.screenshot({ path: `${evidenceRoot}/${testInfo.project.name}-dashboard-meetings.png`, fullPage: true });
+});
+
 test('first-run onboarding validates and preserves choices', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== 'mobile-390', 'One representative first-run journey is sufficient.');
   await page.goto('/');
