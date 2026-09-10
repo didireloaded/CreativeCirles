@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowDown, ArrowUpRight, Bookmark, CalendarDays, Check, MapPin, Search, SlidersHorizontal, Users, X } from 'lucide-react';
 import { creators, photos } from './data';
 import type { ScreenProps } from './types';
+import { EmptyState } from './components/AsyncState';
 import './discover.css';
 
 const categories = ['All', 'Photography', 'Film', 'Fashion', 'Design', 'Music'] as const;
@@ -53,6 +54,7 @@ function useSavedSet(key: string) {
 }
 
 export default function Discover({ notify, profile }: ScreenProps) {
+  const previewState = new URLSearchParams(window.location.search).get('state');
   const [view, setView] = useState<View>('For you');
   const [category, setCategory] = useState<Category>(() => { try { const value = localStorage.getItem('cc-preferred-discipline'); return categories.includes(value as Category) ? value as Category : 'All'; } catch { return 'All'; } });
   const [query, setQuery] = useState('');
@@ -80,7 +82,7 @@ export default function Discover({ notify, profile }: ScreenProps) {
   });
   const filteredCircles = circles.filter(circle => matchCategory(circle.category) && `${circle.name} ${circle.description} ${circle.category}`.toLowerCase().includes(search));
   const filteredEvents = events.filter(event => matchCategory(event.category) && `${event.name} ${event.description} ${event.category}`.toLowerCase().includes(search));
-  const resultCount = view === 'For you' ? filteredWorks.length : view === 'Creatives' ? filteredCreators.length : view === 'Communities' ? filteredCircles.length : filteredEvents.length;
+  const resultCount = previewState === 'empty' ? 0 : view === 'For you' ? filteredWorks.length : view === 'Creatives' ? filteredCreators.length : view === 'Communities' ? filteredCircles.length : filteredEvents.length;
 
   useEffect(() => {
     if (selected && dialog.current && !dialog.current.open) dialog.current.showModal();
@@ -134,12 +136,12 @@ export default function Discover({ notify, profile }: ScreenProps) {
     </div>
     <span className="ds-sr-only" role="status">{resultCount} {view.toLowerCase()} results{query ? ` for ${query}` : ''}</span>
 
-    {resultCount === 0 && <div className="ds-empty">
-      <Search size={32} strokeWidth={1.4} />
-      <h3>{savedOnly ? 'Your inspiration starts here.' : 'Nothing here just yet.'}</h3>
-      <p>{savedOnly ? 'Save work that catches your eye, then find it here.' : 'Try another search or explore a different discipline.'}</p>
-      <button className="button primary" onClick={reset}>Explore all {view === 'For you' ? 'work' : view.toLowerCase()}</button>
-    </div>}
+    {resultCount === 0 && <EmptyState
+      icon={<Search size={32} strokeWidth={1.4} />}
+      title={previewState === 'empty' ? 'Your next creative connection starts here.' : savedOnly ? 'Your inspiration starts here.' : 'Nothing here just yet.'}
+      description={previewState === 'empty' ? 'Explore work and people shaped around the interests you chose.' : savedOnly ? 'Save work that catches your eye, then find it here.' : 'Try another search or explore a different discipline.'}
+      action={{ label: `Explore all ${view === 'For you' ? 'work' : view.toLowerCase()}`, onClick: reset }}
+    />}
 
     {view === 'For you' && resultCount > 0 && <div className={`ds-gallery ${recommendedWorks.length < 4 ? 'ds-gallery-filtered' : ''}`} aria-label="Illustrative creative work">
       {recommendedWorks.map((work, index) => <article className={`ds-work ds-work-${work.shape}`} key={work.id}>
