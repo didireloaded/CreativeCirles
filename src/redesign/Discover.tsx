@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowDown, ArrowUpRight, Bookmark, CalendarDays, Check, MapPin, Search, SlidersHorizontal, Users, X } from 'lucide-react';
-import { creators, photos } from './data';
-import type { ScreenProps } from './types';
+import { communities as circles, creators, photos } from './data';
+import type { Community, Creator, ScreenProps } from './types';
 import { EmptyState } from './components/AsyncState';
+import CreatorDetail from './details/CreatorDetail';
+import CommunityDetail from './details/CommunityDetail';
 import './discover.css';
 
 const categories = ['All', 'Photography', 'Film', 'Fashion', 'Design', 'Music'] as const;
@@ -21,14 +23,6 @@ const works = [
   { id: 'desert', title: 'Take the long way', subtitle: 'Stories from the open road', category: 'Film', image: photos.desert, creator: 4, shape: 'wide', tags: 'road travel landscape desert film nature', description: 'An illustrative short-film concept about slowing down and finding stories along the way.' },
 ];
 type Work = typeof works[number];
-
-const circles = [
-  { id: 'frame-circle', name: 'The Frame Circle', category: 'Photography', image: photos.dunes, description: 'A place to share frames, exchange feedback, and explore new perspectives.', members: 128 },
-  { id: 'moving-stories', name: 'Moving Stories', category: 'Film', image: photos.camera, description: 'From first idea to final cut. Find fellow storytellers and share your process.', members: 76 },
-  { id: 'studio-table', name: 'The Studio Table', category: 'Design', image: photos.art, description: 'Bring your sketches, works in progress, and the questions behind your work.', members: 94 },
-  { id: 'threads-circle', name: 'Threads & Form', category: 'Fashion', image: photos.fashion, description: 'An open conversation about craft, materials, and everyday expression.', members: 52 },
-  { id: 'sound-room', name: 'The Sound Room', category: 'Music', image: photos.music, description: 'For the people making, recording, and listening a little more closely.', members: 63 },
-];
 
 const events = [
   { id: 'photo-walk', name: 'Golden hour photo walk', category: 'Photography', image: photos.dunes, month: 'OCT', day: '12', time: 'Saturday · 16:30–18:00', place: 'Sample meeting point', description: 'Meet fellow image makers, explore the light, and share what catches your eye.' },
@@ -61,6 +55,8 @@ export default function Discover({ notify, profile }: ScreenProps) {
   const [savedOnly, setSavedOnly] = useState(false);
   const [selected, setSelected] = useState<Work | null>(null);
   const [selectedEvent, setSelectedEvent] = useState<(typeof events)[number] | null>(null);
+  const [selectedCreator, setSelectedCreator] = useState<Creator | null>(null);
+  const [selectedCommunity, setSelectedCommunity] = useState<Community | null>(null);
   const [saved, toggleSaved] = useSavedSet('cc-discover-saves');
   const [following, toggleFollowing] = useSavedSet('cc-discover-following');
   const [joined, toggleJoined] = useSavedSet('cc-discover-joined');
@@ -163,19 +159,19 @@ export default function Discover({ notify, profile }: ScreenProps) {
       {filteredCreators.map(creator => {
         const index = creators.findIndex(item => item.handle === creator.handle);
         const cover = works.find(work => work.creator === index)?.image || photos.art;
-        return <article className="ds-creator" key={creator.handle}>
+        return <article className="ds-creator" key={creator.handle} onClick={() => setSelectedCreator(creator)}>
           <div className="ds-creator-cover"><img src={cover} alt={`${creator.role} sample work`} /></div>
           <div className="ds-creator-info"><img className="ds-creator-avatar" src={creator.image} alt="" /><h3>{creator.name}</h3><p>@{creator.handle}</p><span className="ds-creator-role">{creator.role}</span>
-            <button className={`button ${following.includes(creator.handle) ? 'secondary' : 'primary'}`} aria-pressed={following.includes(creator.handle)} onClick={() => { toggleFollowing(creator.handle); notify(following.includes(creator.handle) ? `Unfollowed ${creator.name} in this preview.` : `Following ${creator.name} in this preview.`); }}>{following.includes(creator.handle) ? <><Check size={16} />Following</> : <>Follow creative<ArrowUpRight size={16} /></>}</button>
+            <button className={`button ${following.includes(creator.handle) ? 'secondary' : 'primary'}`} aria-pressed={following.includes(creator.handle)} onClick={(event) => { event.stopPropagation(); toggleFollowing(creator.handle); notify(following.includes(creator.handle) ? `Unfollowed ${creator.name} in this preview.` : `Following ${creator.name} in this preview.`); }}>{following.includes(creator.handle) ? <><Check size={16} />Following</> : <>Follow creative<ArrowUpRight size={16} /></>}</button>
           </div>
         </article>;
       })}
     </div>}
 
     {view === 'Communities' && resultCount > 0 && <div className="ds-circles" aria-label="Sample communities">
-      {filteredCircles.map(circle => <article key={circle.id} className="ds-circle">
+      {filteredCircles.map(circle => <article key={circle.id} className="ds-circle" onClick={() => setSelectedCommunity(circle)}>
         <img className="ds-circle-image" src={circle.image} alt={`${circle.category} community illustration`} />
-        <div className="ds-circle-content"><div className="ds-circle-meta"><span className="eyebrow">{circle.category}</span><Users size={18} /></div><h3>{circle.name}</h3><p>{circle.description}</p><div className="ds-circle-bottom"><span>{circle.members} members</span><button className={`button ${joined.includes(circle.id) ? 'secondary' : 'primary'}`} aria-pressed={joined.includes(circle.id)} onClick={() => { toggleJoined(circle.id); notify(joined.includes(circle.id) ? `Left ${circle.name} in this preview.` : `Joined ${circle.name} in this preview.`); }}>{joined.includes(circle.id) ? <><Check size={16} />Joined</> : <>Join circle<ArrowUpRight size={16} /></>}</button></div></div>
+        <div className="ds-circle-content"><div className="ds-circle-meta"><span className="eyebrow">{circle.category}</span><Users size={18} /></div><h3>{circle.name}</h3><p>{circle.description}</p><div className="ds-circle-bottom"><span>{circle.members} members</span><button className={`button ${joined.includes(circle.id) ? 'secondary' : 'primary'}`} aria-pressed={joined.includes(circle.id)} onClick={(event) => { event.stopPropagation(); toggleJoined(circle.id); notify(joined.includes(circle.id) ? `Left ${circle.name} in this preview.` : `Joined ${circle.name} in this preview.`); }}>{joined.includes(circle.id) ? <><Check size={16} />Joined</> : <>Join circle<ArrowUpRight size={16} /></>}</button></div></div>
       </article>)}
     </div>}
 
@@ -197,5 +193,7 @@ export default function Discover({ notify, profile }: ScreenProps) {
     <dialog className="ds-detail" open={Boolean(selectedEvent)} onCancel={() => setSelectedEvent(null)} aria-labelledby="event-detail-title">
       {selectedEvent && <div className="ds-detail-inner"><div className="ds-detail-image"><img src={selectedEvent.image} alt={selectedEvent.name} /></div><div className="ds-detail-body"><button className="icon-button ds-detail-close" onClick={() => setSelectedEvent(null)} aria-label="Close event detail"><X size={22} /></button><p className="eyebrow">{selectedEvent.category}</p><h2 id="event-detail-title">{selectedEvent.name}</h2><p className="ds-detail-description">{selectedEvent.description}</p><div className="ds-event-details"><span><CalendarDays size={16} />{selectedEvent.time}</span><span><MapPin size={16} />{selectedEvent.place}</span></div><button className="button primary ds-detail-save" onClick={() => { toggleInterested(selectedEvent.id); notify('Event interest updated on this device.'); }}><Bookmark size={18}/> {interested.includes(selectedEvent.id) ? 'Interested' : 'Save event'}</button></div></div>}
     </dialog>
+    <CreatorDetail open={Boolean(selectedCreator)} creator={selectedCreator} onClose={() => setSelectedCreator(null)} onCollaborate={creator => { setSelectedCreator(null); notify(`Collaboration request to ${creator.name} saved locally.`); }} />
+    <CommunityDetail open={Boolean(selectedCommunity)} community={selectedCommunity} onClose={() => setSelectedCommunity(null)} notify={notify} />
   </div>;
 }

@@ -24,3 +24,40 @@ export interface Post {
   comments: number;
   project?: boolean;
 }
+export interface Comment {
+  id: string;
+  author: string;
+  body: string;
+  createdAt: string;
+}
+export interface ServiceRate {
+  name: string;
+  rate: string;
+}
+export interface Creator {
+  id: string;
+  name: string;
+  handle: string;
+  role: string;
+  image: string;
+  bio: string;
+  availability: string;
+  skills: string[];
+  equipment: string[];
+  services: ServiceRate[];
+  portfolio: string[];
+  socialLinks: string[];
+}
+export interface CreativePost extends Post { authorId: string }
+export interface Community {
+  id: string;
+  name: string;
+  category: string;
+  image: string;
+  description: string;
+  purpose: string;
+  members: number;
+  disciplines: string[];
+  memberPreviews: Creator[];
+  recentWork: string[];
+}
