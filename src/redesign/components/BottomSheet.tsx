@@ -12,8 +12,8 @@ export default function BottomSheet({ open, title, onClose, children, className 
     const node = dialog.current;
     if (!node) return;
     if (open) {
-      opener.current = document.activeElement as HTMLElement;
       if (!node.open) {
+        opener.current = document.activeElement as HTMLElement;
         if (typeof node.showModal === 'function') node.showModal();
         else node.setAttribute('open', '');
       }
@@ -24,7 +24,13 @@ export default function BottomSheet({ open, title, onClose, children, className 
       document.body.classList.remove('ui-layer-open');
       opener.current?.focus();
     }
-    return () => document.body.classList.remove('ui-layer-open');
+    return () => {
+      document.body.classList.remove('ui-layer-open');
+      if (open) {
+        const target = opener.current;
+        requestAnimationFrame(() => target?.focus());
+      }
+    };
   }, [open]);
 
   return <dialog ref={dialog} className={`ui-sheet ${className}`} aria-labelledby={titleId} onCancel={event => { event.preventDefault(); onClose(); }} onClick={event => { if (event.target === event.currentTarget) onClose(); }}>

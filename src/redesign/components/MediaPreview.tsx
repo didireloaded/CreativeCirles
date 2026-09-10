@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useState } from 'react';
 import { FileAudio, RefreshCw, Trash2 } from 'lucide-react';
 
 type Valid = { ok: true; kind: 'image' | 'video' | 'audio' };
@@ -17,8 +17,12 @@ function sizeLabel(bytes: number) { return bytes < 1024 * 1024 ? `${Math.max(1, 
 
 export default function MediaPreview({ file, onRemove, onReplace }: { file: File | null; onRemove: () => void; onReplace: () => void }) {
   const validation = file ? validateMediaFile(file) : null;
-  const url = useMemo(() => file && validation?.ok && typeof URL.createObjectURL === 'function' ? URL.createObjectURL(file) : '', [file, validation?.ok]);
-  useEffect(() => () => { if (url && typeof URL.revokeObjectURL === 'function') URL.revokeObjectURL(url); }, [url]);
+  const [url,setUrl] = useState('');
+  useEffect(() => {
+    if (!file || !validation?.ok || typeof URL.createObjectURL !== 'function') { setUrl(''); return; }
+    const next = URL.createObjectURL(file); setUrl(next);
+    return () => { if (typeof URL.revokeObjectURL === 'function') URL.revokeObjectURL(next); };
+  }, [file, validation?.ok]);
   if (!file || !validation?.ok) return null;
   return <section className="media-preview" aria-label={`${validation.kind} preview`}>
     <div className="media-preview-stage">{validation.kind === 'image' ? <img src={url} alt={`Preview of ${file.name}`} /> : validation.kind === 'video' ? <video src={url} controls playsInline /> : <div className="media-audio"><FileAudio/><audio src={url} controls /></div>}</div>
