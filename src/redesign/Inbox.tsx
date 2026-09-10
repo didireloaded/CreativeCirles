@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
-import { ArrowLeft, ArrowUpRight, Check, ListPlus, MessageCircle, Search, Send, Users, X } from 'lucide-react';
+import { ArrowLeft, ArrowUpRight, Check, ListPlus, MessageCircle, Phone, Search, Send, Users, Video, X } from 'lucide-react';
 import { creators, photos } from './data';
+import CallPreview, { type CallMode } from './calls/CallPreview';
 import type { ScreenProps } from './types';
 import './inbox.css';
 
@@ -46,6 +47,7 @@ export default function Inbox({ notify, openTaskDraft }: ScreenProps) {
   const [messageError, setMessageError] = useState('');
   const [showCollabComposer, setShowCollabComposer] = useState(false);
   const [collabTitle, setCollabTitle] = useState('');
+  const [callMode, setCallMode] = useState<CallMode | null>(null);
   const messagesEnd = useRef<HTMLDivElement>(null);
   const active = conversations.find((conversation) => conversation.id === activeId) || conversations[0];
   const filtered = conversations.filter((conversation) => `${conversation.name} ${conversation.role} ${conversation.title}`.toLowerCase().includes(search.toLowerCase()));
@@ -120,7 +122,7 @@ export default function Inbox({ notify, openTaskDraft }: ScreenProps) {
       </aside>
 
       <div className="in-detail" aria-label={`Conversation with ${active.name}`}>
-        <header className="in-detail-head"><button className="icon-button in-back" onClick={() => setMobileOpen(false)} aria-label="Back to messages"><ArrowLeft size={21} /></button><img className="avatar" src={active.image} alt="" /><div><h2>{active.name}</h2><p>{active.role} <span>· Sample creator</span></p></div><button className="icon-button in-task-action" aria-label="Turn latest message into a task" onClick={() => openTaskDraft({ source: 'message', relatedId: active.id, title: `Follow up: ${active.messages.at(-1)?.body || active.title}`, assigneeIds: [active.id] })}><ListPlus size={19} /></button></header>
+        <header className="in-detail-head"><button className="icon-button in-back" onClick={() => setMobileOpen(false)} aria-label="Back to messages"><ArrowLeft size={21} /></button><img className="avatar" src={active.image} alt="" /><div><h2>{active.name}</h2><p>{active.role}</p></div><span className="in-call-actions"><button className="icon-button" aria-label={`Preview voice call with ${active.name}`} onClick={() => setCallMode('voice')}><Phone size={18} /></button><button className="icon-button" aria-label={`Preview video call with ${active.name}`} onClick={() => setCallMode('video')}><Video size={18} /></button></span><button className="icon-button in-task-action" aria-label="Turn latest message into a task" onClick={() => openTaskDraft({ source: 'message', relatedId: active.id, title: `Follow up: ${active.messages.at(-1)?.body || active.title}`, assigneeIds: [active.id] })}><ListPlus size={19} /></button></header>
         <div className="in-message-thread" ref={messagesEnd}>
           <div className="in-conversation-intro"><span className="in-conversation-symbol"><Users size={25} strokeWidth={1.4} /></span><p className="eyebrow">BETTER TOGETHER</p><h3>{active.title}</h3><p>This is where an idea becomes a collaboration.</p></div>
           <div className="in-date-divider"><span>Preview conversation</span></div>
@@ -142,5 +144,6 @@ export default function Inbox({ notify, openTaskDraft }: ScreenProps) {
         </article>;
       })}</div><p className="in-collab-note">Decisions are saved on this device for the UI preview. No invitations or messages are sent.</p>
     </div>}
+    <CallPreview open={callMode !== null} mode={callMode || 'voice'} creator={creators.find(creator => creator.id === active.id) || creators[0]} onClose={() => setCallMode(null)} />
   </section>;
 }

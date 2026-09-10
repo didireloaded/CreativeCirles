@@ -120,6 +120,18 @@ test('connected social and creation details work locally', async ({ page }, test
   await page.screenshot({ path: `${evidenceRoot}/media-preview.png`, fullPage: true });
 });
 
+test('calling preview stays safe and clearly unavailable', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'mobile-390', 'Captured at the primary mobile viewport.');
+  await seed(page); await page.goto('/inbox');
+  await page.getByRole('button', { name: 'Open conversation with Amara K.' }).first().click();
+  await page.getByRole('button', { name: 'Preview video call with Amara K.' }).click();
+  await expect(page.getByRole('dialog', { name: 'Video call preview with Amara K.' })).toBeVisible();
+  await expect(page.getByText('Coming soon', { exact: true })).toBeVisible();
+  await page.screenshot({ path: `${evidenceRoot}/call-preview.png` });
+  await page.getByRole('button', { name: 'End call preview' }).click();
+  await expect(page.getByRole('heading', { name: 'Amara K.' })).toBeVisible();
+});
+
 test('reduced motion pauses timed stories and create animation', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== 'mobile-390', 'Motion behavior is independent of viewport size.');
   await page.emulateMedia({ reducedMotion: 'reduce' }); await seed(page); await page.goto('/home');
