@@ -52,7 +52,7 @@ function useSavedSet(key: string) {
   return [values, toggle] as const;
 }
 
-export default function Discover({ notify }: ScreenProps) {
+export default function Discover({ notify, profile }: ScreenProps) {
   const [view, setView] = useState<View>('For you');
   const [category, setCategory] = useState<Category>(() => { try { const value = localStorage.getItem('cc-preferred-discipline'); return categories.includes(value as Category) ? value as Category : 'All'; } catch { return 'All'; } });
   const [query, setQuery] = useState('');
@@ -72,6 +72,7 @@ export default function Discover({ notify }: ScreenProps) {
     (!savedOnly || saved.includes(work.id)) &&
     `${work.title} ${work.subtitle} ${work.tags} ${work.category} ${creators[work.creator].name}`.toLowerCase().includes(search)
   ), [category, savedOnly, saved, search]);
+  const recommendedWorks = useMemo(() => [...filteredWorks].sort((a, b) => Number(profile.interests.includes(b.category)) - Number(profile.interests.includes(a.category))), [filteredWorks, profile.interests]);
 
   const filteredCreators = creators.filter(creator => {
     const creatorCategory = creator.role === 'Photographer' ? 'Photography' : creator.role === 'Filmmaker' ? 'Film' : creator.role === 'Fashion designer' ? 'Fashion' : 'Design';
@@ -140,8 +141,8 @@ export default function Discover({ notify }: ScreenProps) {
       <button className="button primary" onClick={reset}>Explore all {view === 'For you' ? 'work' : view.toLowerCase()}</button>
     </div>}
 
-    {view === 'For you' && resultCount > 0 && <div className={`ds-gallery ${filteredWorks.length < 4 ? 'ds-gallery-filtered' : ''}`} aria-label="Illustrative creative work">
-      {filteredWorks.map((work, index) => <article className={`ds-work ds-work-${work.shape}`} key={work.id}>
+    {view === 'For you' && resultCount > 0 && <div className={`ds-gallery ${recommendedWorks.length < 4 ? 'ds-gallery-filtered' : ''}`} aria-label="Illustrative creative work">
+      {recommendedWorks.map((work, index) => <article className={`ds-work ds-work-${work.shape}`} key={work.id}>
         <button className="ds-work-open" onClick={() => setSelected(work)} aria-label={`Open ${work.title}, sample ${work.category.toLowerCase()} by ${creators[work.creator].name}`}>
           <img src={work.image} alt={work.subtitle} loading={index < 3 ? 'eager' : 'lazy'} />
           <div className="ds-work-gradient" />

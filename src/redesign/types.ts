@@ -1,9 +1,13 @@
+import type { OnboardingProfile } from './onboarding/model';
+
 export type Page = 'home' | 'discover' | 'inbox' | 'profile' | 'workspace';
 export interface ScreenProps {
   notify: (message: string) => void;
   navigate: (page: Page) => void;
   openCreate: () => void;
   openDrafts: () => void;
+  profile: OnboardingProfile;
+  editPreferences: () => void;
 }
 export interface Post {
   id: string;
