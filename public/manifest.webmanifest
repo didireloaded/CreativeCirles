@@ -6,6 +6,8 @@
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
+  "orientation": "portrait-primary",
+  "categories": ["social", "productivity", "photo"],
   "background_color": "#151310",
   "theme_color": "#151310",
   "icons": [
