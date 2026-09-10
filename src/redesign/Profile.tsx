@@ -1,0 +1,21 @@
+import { useState } from 'react';
+import { ArrowUpRight, Camera, Check, Grid2X2, Link as LinkIcon, MapPin, Pencil, Settings } from 'lucide-react';
+import { photos } from './data';
+import type { ScreenProps } from './types';
+import Modal from './Modal';
+import { readLocal, writeLocal } from './storage';
+import './profile.css';
+
+const profileImages=[photos.dunes,photos.camera,photos.fashion,photos.ocean,photos.art,photos.architecture];
+export default function Profile({notify,navigate,openDrafts}:ScreenProps){
+ const [tab,setTab]=useState<'Work'|'Projects'|'About'>('Work');
+ const [edit,setEdit]=useState(false); const [saved,setSaved]=useState(()=>readLocal('profile',{name:'Jordan K.',bio:'Visual storyteller. Finding quiet frames in loud places.'})); const [form,setForm]=useState(saved);
+ const save=(e:React.FormEvent)=>{e.preventDefault();setSaved(form);writeLocal('profile',form);setEdit(false);notify('Profile preview saved on this device.')};
+ return <div className="pf-page"><header className="pf-hero"><img src={photos.desert} alt="Golden desert landscape"/><div className="pf-shade"/><button className="icon-button pf-settings" onClick={()=>notify('Settings will be connected during the account phase.')} aria-label="Open settings"><Settings/></button><div className="pf-identity"><img src={photos.portrait} alt="Sample profile portrait"/><div><span className="eyebrow">PHOTOGRAPHER · FILMMAKER</span><h1>{saved.name}<Check aria-label="Sample verified badge"/></h1><p>@jordan.creates</p></div></div></header>
+ <main className="pf-content"><div className="pf-actions"><button className="button primary" onClick={()=>setEdit(true)}><Pencil size={16}/> Edit profile</button><button className="button secondary" onClick={()=>navigate('workspace')}>My workspace <ArrowUpRight size={16}/></button></div><p className="pf-bio">{saved.bio}</p><div className="pf-meta"><span><MapPin/> Namibia</span><span><LinkIcon/> Portfolio link · sample</span></div><div className="pf-stats sample-label" aria-label="Sample profile figures"><span><b>24</b> work</span><span><b>892</b> followers</span><span><b>145</b> following</span><i>Sample figures</i></div>
+ <nav className="pf-tabs">{(['Work','Projects','About'] as const).map(x=><button key={x} onClick={()=>setTab(x)} aria-pressed={tab===x}>{x}</button>)}</nav>
+ {tab==='Work'&&<section><div className="section-heading"><h2>Recent work</h2><Grid2X2/></div><div className="pf-grid">{profileImages.map((p,i)=><button key={p} onClick={()=>notify(`Opened sample work ${i+1}. Full media viewer comes with content integration.`)}><img src={p} alt={`Sample creative work ${i+1}`}/></button>)}</div></section>}
+ {tab==='Projects'&&<section className="pf-project"><img src={photos.dunes} alt="Dunes at sunset"/><div><p className="eyebrow">FEATURED PROJECT · SAMPLE</p><h2>Between sand & sky</h2><p>A shared portrait study of the Namib, built with credited collaborators and a little patience.</p><button className="button primary" onClick={()=>notify('Project detail will connect during the project-post phase.')}>View project <ArrowUpRight size={16}/></button></div></section>}
+ {tab==='About'&&<section className="pf-about"><div><p className="eyebrow">CREATIVE PRACTICE</p><h2>Stories rooted in place.</h2></div><div><p>{saved.bio}</p><h3>Open to</h3><p>Editorial photography · Short films · Creative direction · Passion projects</p><h3>Saved ideas</h3><button className="button secondary" onClick={openDrafts}>Open creative notebook</button></div></section>}
+ </main>{edit&&<Modal title="Edit profile preview" onClose={()=>setEdit(false)}><form className="pf-form" onSubmit={save}><label>Display name<input value={form.name} maxLength={40} onChange={e=>setForm({...form,name:e.target.value})} required/></label><label>Short bio<textarea value={form.bio} maxLength={160} onChange={e=>setForm({...form,bio:e.target.value})} required/></label><p>Changes stay on this device until profile integration begins.</p><button className="button primary" type="submit">Save changes</button></form></Modal>}</div>
+}
