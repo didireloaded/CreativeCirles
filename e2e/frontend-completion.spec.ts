@@ -84,6 +84,11 @@ test('connected social and creation details work locally', async ({ page }, test
 
   await page.locator('.story:not(.add)').first().click();
   await expect(page.getByRole('button', { name: 'Next story' })).toBeVisible();
+  await page.getByRole('button', { name: 'React with fire' }).click();
+  await expect(page.locator('.story-dialog').getByRole('status')).toContainText('Reacted with 🔥');
+  await page.getByLabel('Reply privately to Amara K.').fill('That light is beautiful.');
+  await page.getByRole('button', { name: 'Send private reply' }).click();
+  await expect(page.locator('.story-dialog').getByRole('status')).toContainText('Private reply saved');
   await page.screenshot({ path: `${evidenceRoot}/story.png` });
   await page.keyboard.press('Escape');
 

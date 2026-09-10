@@ -65,6 +65,19 @@ describe('stories and notifications', () => {
     expect(close).toHaveBeenCalled();
   });
 
+  it('likes, reacts, and saves a private story reply', async () => {
+    const user = userEvent.setup();
+    render(<StoryViewer open stories={[{ id:'one', creator, image:'/one.jpg', label:'First frame' }]} initialIndex={0} onClose={vi.fn()} />);
+
+    await user.click(screen.getByRole('button', { name: 'Like story' }));
+    expect(screen.getByRole('button', { name: 'Unlike story' })).toBeVisible();
+    await user.click(screen.getByRole('button', { name: 'React with fire' }));
+    expect(screen.getByRole('status')).toHaveTextContent('Reacted with 🔥');
+    await user.type(screen.getByLabelText('Reply privately to Amara K.'), 'Wonderful frame');
+    await user.click(screen.getByRole('button', { name: 'Send private reply' }));
+    expect(screen.getByRole('status')).toHaveTextContent('Private reply saved');
+  });
+
   it('marks notifications read and explains an empty inbox', async () => {
     const user = userEvent.setup();
     const { rerender } = render(<NotificationPanel open items={[{ id:'comment', group:'Today', title:'Amara commented on your project', detail:'The framing feels intentional.', time:'12 min' }]} onClose={vi.fn()} />);
