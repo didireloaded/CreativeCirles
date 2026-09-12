@@ -86,6 +86,36 @@ Begin the approved complete frontend build with the shared product foundation an
 
 ## Entry Template
 
+### 2026-09-12 — Codex
+
+**Task**
+Implement the complete Marketplace frontend slice.
+
+**Changed**
+- `src/redesign/jobs/*`
+- `src/redesign/talent/*`
+- `src/redesign/App.tsx`
+
+**Key decisions**
+- Job applications save as private local drafts and never imply submission.
+- Applicant tracking is available as the creator-side view of Jobs.
+- Talent collaboration hands off to the existing Inbox; saved talent uses the shared domain repository.
+
+**Verification**
+- `npm test` — 54 tests passed.
+- `npm run lint`, `npm run typecheck`, and `npm run build` — passed.
+
+**Known issues**
+- Full backend submission, real-time applicant updates, and remote share links remain intentionally deferred.
+
+**Do not undo**
+- Preserve explicit local-preview wording and the absence of payment/application-success claims.
+
+**Next**
+- Implement Projects, then the remaining secondary product modules.
+
+---
+
 ### YYYY-MM-DD — Agent Name
 
 **Task**
