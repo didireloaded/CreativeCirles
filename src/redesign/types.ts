@@ -1,7 +1,8 @@
 import type { OnboardingProfile } from './onboarding/model';
 import type { TaskDraft } from './tasks/model';
 
-export type Page = 'home' | 'discover' | 'tasks' | 'inbox' | 'profile' | 'workspace';
+export type PrimaryPage = 'home' | 'discover' | 'tasks' | 'inbox';
+export type Page = PrimaryPage | 'profile' | 'workspace' | 'tools' | 'jobs' | 'talent' | 'projects' | 'buzz' | 'skill-swap' | 'ai-studio' | 'business' | 'saved';
 export interface ScreenProps {
   notify: (message: string) => void;
   navigate: (page: Page) => void;

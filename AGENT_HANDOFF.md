@@ -43,6 +43,47 @@ Adopt the shared Codex/Antigravity governance bundle and define the approved com
 
 ---
 
+### 2026-09-12 — Codex
+
+**Task**
+Begin the approved complete frontend build with the shared product foundation and Tools hub.
+
+**Changed**
+- `src/redesign/domain/*`
+- `src/redesign/tools/*`
+- `src/redesign/routing.ts`
+- `src/redesign/App.tsx`
+- `src/redesign/Discover.tsx`
+- `src/redesign/Profile.tsx`
+- `src/redesign/Workspace.tsx`
+- `src/redesign/__tests__/secondary-routing.test.tsx`
+- `src/redesign/__tests__/tools-hub.test.tsx`
+- `docs/superpowers/plans/2026-09-12-*.md`
+
+**Key decisions**
+- Preserve the five primary tabs; all additional product areas remain secondary routes.
+- Centralize new local-preview state in a versioned repository/provider instead of adding direct localStorage access to feature screens.
+- Route every secondary destination through the Tools hub until its dedicated module is implemented.
+
+**Verification**
+- `npm test` — 51 tests passed.
+- `npm run lint` — passed with no warnings.
+- `npm run typecheck` — passed.
+- `npm run build` — passed.
+- Browser accessibility inspection confirmed all eight tool destinations and local-preview labeling at `/tools`.
+
+**Known issues**
+- Dedicated Jobs, Talent, Projects, Buzz, Skill Swap, AI Studio, Business, and Saved screens are the next planned modules; their routes currently keep the user in the hub.
+
+**Do not undo**
+- Keep the shared repository immutable at snapshot boundaries and retain corrupt-storage recovery.
+- Do not promote secondary tools into the primary bottom navigation.
+
+**Next**
+- Implement the Marketplace plan, beginning with Jobs Board and job detail/application preview.
+
+---
+
 ## Entry Template
 
 ### YYYY-MM-DD — Agent Name

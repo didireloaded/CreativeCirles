@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowDown, ArrowUpRight, Bookmark, CalendarDays, Check, ListPlus, MapPin, Search, SlidersHorizontal, Users, X } from 'lucide-react';
+import { ArrowDown, ArrowUpRight, Bookmark, CalendarDays, Check, ListPlus, MapPin, Search, SlidersHorizontal, Sparkles, Users, X } from 'lucide-react';
 import { communities as circles, creators, photos } from './data';
 import type { Community, Creator, ScreenProps } from './types';
 import { EmptyState } from './components/AsyncState';
@@ -47,7 +47,7 @@ function useSavedSet(key: string) {
   return [values, toggle] as const;
 }
 
-export default function Discover({ notify, profile, openTaskDraft }: ScreenProps) {
+export default function Discover({ notify, profile, openTaskDraft, navigate }: ScreenProps) {
   const previewState = new URLSearchParams(window.location.search).get('state');
   const [view, setView] = useState<View>('For you');
   const [category, setCategory] = useState<Category>(() => { try { const value = localStorage.getItem('cc-preferred-discipline'); return categories.includes(value as Category) ? value as Category : 'All'; } catch { return 'All'; } });
@@ -102,7 +102,7 @@ export default function Discover({ notify, profile, openTaskDraft }: ScreenProps
         <h1>Discover</h1>
         <p className="ds-intro">Find your favourite content</p>
       </div>
-      <span className="ds-heading-mark" aria-hidden="true"><ArrowDown size={30} strokeWidth={1.5} /></span>
+      <button className="icon-button ds-heading-mark" onClick={()=>navigate('tools')} aria-label="Open creative tools"><Sparkles size={21}/><span className="ds-sr-only">Creative tools</span></button>
     </header>
 
     <div className="ds-search-row">

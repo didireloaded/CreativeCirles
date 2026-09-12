@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { ArrowDownRight, ArrowRight, ArrowUpRight, CalendarDays, Check, ChevronLeft, ChevronRight, Clock3, Film, Image, MapPin, Plus, SlidersHorizontal, X } from 'lucide-react';
+import { ArrowDownRight, ArrowRight, ArrowUpRight, CalendarDays, Check, ChevronLeft, ChevronRight, Clock3, Film, Image, MapPin, Plus, SlidersHorizontal, Sparkles, X } from 'lucide-react';
 import { creators, photos } from './data';
 import type { ScreenProps } from './types';
 import MeetingsView from './dashboard/MeetingsView';
@@ -105,7 +105,7 @@ export default function Workspace({ notify, navigate, openCreate, openDrafts, pr
   }
 
   return <div className="ws-page">
-    <header className="ws-page-header"><div><p className="eyebrow">YOUR CREATIVE DAY, IN FOCUS</p><h1>{view === 'Overview' ? `Good morning, ${profile.displayName || 'Jordan'}!` : view}</h1></div><button className="button secondary ws-new-reminder" onClick={openReminderForm}><Plus size={17} /><span>New reminder</span></button></header>
+    <header className="ws-page-header"><div><p className="eyebrow">YOUR CREATIVE DAY, IN FOCUS</p><h1>{view === 'Overview' ? `Good morning, ${profile.displayName || 'Jordan'}!` : view}</h1></div><div className="ws-header-actions"><button className="button secondary" onClick={()=>navigate('tools')} aria-label="Open creative tools"><Sparkles size={17}/><span>Creative tools</span></button><button className="button secondary ws-new-reminder" onClick={openReminderForm}><Plus size={17} /><span>New reminder</span></button></div></header>
     <div className="ws-view-tabs" role="tablist" aria-label="Workspace views">{workspaceViews.map(tab => <button id={`ws-tab-${tab}`} aria-controls={`ws-panel-${tab}`} key={tab} role="tab" aria-selected={view === tab} tabIndex={view === tab ? 0 : -1} onKeyDown={event => { if (event.key === 'ArrowRight' || event.key === 'ArrowLeft') { event.preventDefault(); const direction = event.key === 'ArrowRight' ? 1 : workspaceViews.length - 1; const next = workspaceViews[(workspaceViews.indexOf(tab) + direction) % workspaceViews.length]; setView(next); requestAnimationFrame(() => document.getElementById(`ws-tab-${next}`)?.focus()); } }} onClick={() => setView(tab)}>{tab}</button>)}</div>
 
     {showReminderForm && <form className="ws-reminder-form" onSubmit={addReminder}>
