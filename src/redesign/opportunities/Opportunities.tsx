@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   ArrowLeft,
   Bookmark,
@@ -63,7 +63,7 @@ export function CreativeBuzz({
   openTaskDraft,
 }: {
   notify: (message: string) => void;
-  navigate: (page: Page) => void;
+  navigate: (page: Page | string) => void;
   openTaskDraft?: (draft:TaskDraft)=>void;
 }) {
   const { state, toggleSaved } = useProductDomain();
@@ -98,11 +98,8 @@ export function CreativeBuzz({
       </header>
       <section className="opp-controls">
         <label>
-          Opportunity
-          <select
-            value={type}
-            onChange={(event) => setType(event.target.value)}
-          >
+          Discipline
+          <select value={type} onChange={(e) => setType(e.target.value)}>
             <option>All</option>
             <option>Grant</option>
             <option>Workshop</option>
@@ -110,43 +107,24 @@ export function CreativeBuzz({
           </select>
         </label>
         <label>
-          Manual location
-          <select
-            aria-label="Manual location"
-            value={place}
-            onChange={(event) => setPlace(event.target.value)}
-          >
+          Location
+          <select value={place} onChange={(e) => setPlace(e.target.value)}>
             <option>All locations</option>
-            <option>Windhoek</option>
             <option>Southern Africa</option>
-            <option>Swakopmund</option>
+            <option>Windhoek</option>
             <option>Remote</option>
           </select>
         </label>
-        <button
-          className="button secondary"
-          onClick={() =>
-            notify(
-              "Device location stays off. Use the manual city filter for this preview.",
-            )
-          }
-        >
-          <MapPin />
-          Nearby: {place}
-        </button>
       </section>
-      <section className="opp-grid">
-        {!list.length && <p>No opportunities match this location. Try All locations.</p>}
+      <section className="opp-list">
         {list.map((item) => {
-          const saved = state.savedItems.some(
-            (value) => value.kind === "opportunity" && value.id === item.id,
-          );
+          const saved = state.savedItems.some((entry) => entry.id === item.id);
           return (
             <article key={item.id}>
-              <span>{item.type}</span>
-              <h2>{item.title}</h2>
-              <p>{item.text}</p>
               <div>
+                <span>{item.type}</span>
+                <h2>{item.title}</h2>
+                <p>{item.text}</p>
                 <small>
                   <MapPin />
                   {item.where}
@@ -189,13 +167,22 @@ export function SkillSwap({
   navigate,
 }: {
   notify: (message: string) => void;
-  navigate: (page: Page) => void;
+  navigate: (page: Page | string) => void;
 }) {
   const [proposed, setProposed] = useLocalState<string[]>("swap-proposals",[]);
   const [offer,setOffer] = useLocalState("swap-offer",{skill:"photography",details:"Available for one half-day collaboration this month."});
   const [editing,setEditing] = useState(false);
   const [form,setForm] = useState(offer);
   const [query,setQuery] = useState("");
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("create") === "true" || params.get("offer") === "true") {
+      setForm(offer);
+      setEditing(true);
+    }
+  }, []);
+
   return (
     <main className="opp-page">
       <header className="opp-hero swap-hero">
@@ -243,7 +230,17 @@ export function SkillSwap({
         {swaps.filter(item=>`${item.offer} ${item.need} ${item.name}`.toLowerCase().includes(query.toLowerCase())).map((item) => (
           <article key={item.id}>
             <div>
-              <span>{item.name}</span>
+              <button
+                type="button"
+                onClick={() => {
+                  const targetCreator = item.name.includes("Leo") ? "leo" : "kai";
+                  navigate(`discover?creator=${targetCreator}`);
+                }}
+                style={{ background: "none", border: "none", padding: 0, cursor: "pointer", font: "inherit", color: "inherit", textAlign: "left" }}
+                aria-label={`View ${item.name}'s profile`}
+              >
+                <span>{item.name}</span>
+              </button>
               <h2>{item.offer}</h2>
               <p>
                 Looking for <strong>{item.need}</strong>
@@ -267,7 +264,10 @@ export function SkillSwap({
             </button>
             <button
               className="button secondary"
-              onClick={() => navigate("inbox")}
+              onClick={() => {
+                const targetCreator = item.name.includes("Leo") ? "leo" : "kai";
+                navigate(`inbox?chat=${targetCreator}&tab=collaborations&createCollab=true`);
+              }}
             >
               Negotiate in Inbox
             </button>

@@ -493,13 +493,26 @@ export default function Workspace({
               </div>
               <span className="sample-label">Sample workspace</span>
             </div>
-            <div className="ws-stats" aria-label="Sample workspace activity">
-              <div>
+            <div className="ws-stats">
+              <button
+                type="button"
+                className="ws-stat-button"
+                onClick={() => navigate("projects")}
+                aria-label="View active projects"
+              >
                 <strong>03</strong>
                 <span>Active projects</span>
                 <i className="ws-stat-dot" />
-              </div>
-              <div>
+              </button>
+              <button
+                type="button"
+                className="ws-stat-button"
+                onClick={() => {
+                  setSelectedDate(today);
+                  setView("Calendar");
+                }}
+                aria-label="View reminders calendar"
+              >
                 <strong>
                   {String(
                     todayReminders.filter((item) => !item.done).length,
@@ -507,12 +520,17 @@ export default function Workspace({
                 </strong>
                 <span>Reminders today</span>
                 <i className="ws-stat-dot ws-dot-orange" />
-              </div>
-              <div>
+              </button>
+              <button
+                type="button"
+                className="ws-stat-button"
+                onClick={() => navigate("talent")}
+                aria-label="View creative collaborators"
+              >
                 <strong>05</strong>
                 <span>Creative collaborators</span>
                 <i className="ws-stat-dot ws-dot-lilac" />
-              </div>
+              </button>
             </div>
             <div className="ws-layout">
               <div className="ws-main-column">
@@ -560,12 +578,20 @@ export default function Workspace({
                           {currentCreator.role} · @{currentCreator.handle}
                         </p>
                       </div>
-                      <button
-                        className="ws-text-button"
-                        onClick={() => navigate("discover")}
-                      >
-                        Explore the circle <ArrowRight size={16} />
-                      </button>
+                      <div style={{ display: "flex", gap: 12 }}>
+                        <button
+                          className="ws-text-button"
+                          onClick={() => navigate(`inbox?chat=${currentCreator.id}`)}
+                        >
+                          Message {currentCreator.name} <ArrowRight size={16} />
+                        </button>
+                        <button
+                          className="ws-text-button"
+                          onClick={() => navigate(`discover?creator=${currentCreator.id}`)}
+                        >
+                          View profile <ArrowUpRight size={16} />
+                        </button>
+                      </div>
                     </div>
                   )}
                 </section>
@@ -653,12 +679,20 @@ export default function Workspace({
                         <span>
                           <Clock3 size={16} /> 06:00 · Golden hour shoot
                         </span>
-                        <button
-                          className="ws-text-button"
-                          onClick={() => navigate("inbox")}
-                        >
-                          Open preview inbox <ArrowRight size={16} />
-                        </button>
+                        <div style={{ display: "flex", gap: 12 }}>
+                          <button
+                            className="ws-text-button"
+                            onClick={() => navigate("projects?item=between-sand-sky")}
+                          >
+                            Open in Projects <ArrowUpRight size={16} />
+                          </button>
+                          <button
+                            className="ws-text-button"
+                            onClick={() => navigate("inbox?chat=leo")}
+                          >
+                            Chat with Leo <ArrowRight size={16} />
+                          </button>
+                        </div>
                       </div>
                     </div>
                   )}
@@ -919,18 +953,21 @@ export default function Workspace({
                 </div>
                 {[
                   {
+                    id: "dunes",
                     title: "Between sand & sky",
                     type: "Photography",
                     photo: photos.dunes,
                     rate: "8.9%",
                   },
                   {
+                    id: "ocean",
                     title: "A quieter kind of blue",
                     type: "Visual story",
                     photo: photos.ocean,
                     rate: "7.1%",
                   },
                   {
+                    id: "architecture",
                     title: "Built with intention",
                     type: "Architecture",
                     photo: photos.architecture,
@@ -940,7 +977,7 @@ export default function Workspace({
                   <button
                     className="ws-top-work-item"
                     key={item.title}
-                    onClick={() => navigate("profile")}
+                    onClick={() => navigate(`home?post=${item.id}`)}
                   >
                     <img src={item.photo} alt="" />
                     <span>

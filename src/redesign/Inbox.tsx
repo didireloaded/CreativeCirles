@@ -175,7 +175,7 @@ function readLocal<T>(key: string, fallback: T): T {
   }
 }
 
-export default function Inbox({ notify, openTaskDraft }: ScreenProps) {
+export default function Inbox({ notify, openTaskDraft, navigate }: ScreenProps) {
   const [tab, setTab] = useState<"messages" | "collaborations">("messages");
   const [conversations, setConversations] = useState<Conversation[]>(() =>
     readLocal("cc-preview-conversations", conversationSeed),
@@ -226,6 +226,64 @@ export default function Inbox({ notify, openTaskDraft }: ScreenProps) {
     const panel = messagesEnd.current;
     if (panel) panel.scrollTop = panel.scrollHeight;
   }, [activeId, conversations]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const chatParam = params.get("chat") || params.get("user");
+    const tabParam = params.get("tab");
+    const createCollabParam = params.get("createCollab") || params.get("collab");
+
+    if (tabParam === "collaborations") {
+      setTab("collaborations");
+    } else if (tabParam === "messages") {
+      setTab("messages");
+    }
+
+    if (chatParam) {
+      const existingConv = conversations.find(
+        (c) => c.id === chatParam || c.name.toLowerCase().includes(chatParam.toLowerCase()),
+      );
+      if (existingConv) {
+        openConversation(existingConv.id);
+      } else {
+        const creator = creators.find(
+          (c) => c.id === chatParam || c.name.toLowerCase().includes(chatParam.toLowerCase()),
+        );
+        if (creator) {
+          const newConv: Conversation = {
+            id: creator.id,
+            name: creator.name,
+            role: creator.role,
+            image: creator.image,
+            title: `Chat with ${creator.name}`,
+            time: "Just now",
+            unread: 0,
+            messages: [],
+          };
+          setConversations((prev) => [newConv, ...prev.filter((c) => c.id !== creator.id)]);
+          openConversation(creator.id);
+        }
+      }
+    }
+
+    try {
+      const pendingCollab = localStorage.getItem("cc-pending-collaboration");
+      if (pendingCollab) {
+        const parsed = JSON.parse(pendingCollab);
+        if (parsed.title) setCollabTitle(parsed.title);
+        setShowCollabComposer(true);
+        setTab("collaborations");
+        localStorage.removeItem("cc-pending-collaboration");
+      }
+    } catch {
+      /* Preview storage fallback */
+    }
+
+    if (createCollabParam === "true") {
+      setShowCollabComposer(true);
+      setTab("collaborations");
+    }
+  }, []);
 
   function openConversation(id: string) {
     setDrafts((current) => ({ ...current, [activeId]: draft }));
@@ -422,11 +480,21 @@ export default function Inbox({ notify, openTaskDraft }: ScreenProps) {
               >
                 <ArrowLeft size={21} />
               </button>
-              <img className="avatar" src={active.image} alt="" />
-              <div>
-                <h2>{active.name}</h2>
-                <p>{active.role}</p>
-              </div>
+              <button
+                type="button"
+                className="in-header-profile-btn"
+                onClick={() => {
+                  if (navigate) navigate(`discover?creator=${active.id}`);
+                }}
+                aria-label={`View ${active.name}'s profile`}
+                style={{ display: "flex", alignItems: "center", gap: 10, background: "none", border: "none", padding: 0, cursor: "pointer", font: "inherit", color: "inherit", textAlign: "left" }}
+              >
+                <img className="avatar" src={active.image} alt="" />
+                <div>
+                  <h2 style={{ margin: 0 }}>{active.name}</h2>
+                  <p style={{ margin: 0 }}>{active.role}</p>
+                </div>
+              </button>
               <span className="in-call-actions">
                 <button
                   className="icon-button"
@@ -591,13 +659,21 @@ export default function Inbox({ notify, openTaskDraft }: ScreenProps) {
                     <span>{request.location}</span>
                   </div>
                   <div className="in-request-content">
-                    <div className="in-request-author">
+                    <button
+                      type="button"
+                      className="in-request-author-btn"
+                      onClick={() => {
+                        if (navigate) navigate(`discover?creator=${person.id}`);
+                      }}
+                      style={{ display: "flex", alignItems: "center", gap: 10, background: "none", border: "none", padding: 0, cursor: "pointer", font: "inherit", color: "inherit", textAlign: "left" }}
+                      aria-label={`View ${person.name}'s profile`}
+                    >
                       <img className="avatar" src={person.image} alt="" />
                       <div>
                         <strong>{person.name}</strong>
                         <span>Invited you to collaborate</span>
                       </div>
-                    </div>
+                    </button>
                     <p className="eyebrow">{request.category}</p>
                     <h3>{request.title}</h3>
                     <p className="in-request-description">{request.body}</p>

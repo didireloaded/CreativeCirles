@@ -126,8 +126,9 @@ export default function App() {
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
-  const navigate = (next: Page) => {
-    router(`/${next}`);
+  const navigate = (next: Page | string) => {
+    const target = next.startsWith("/") ? next : `/${next}`;
+    router(target);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
   const finishOnboarding = (next: OnboardingProfile) => {
@@ -317,6 +318,7 @@ export default function App() {
               profile={profile}
               pendingDraft={pendingTaskDraft}
               onDraftConsumed={consumeTaskDraft}
+              navigate={navigate}
             />
           ) : page === "inbox" ? (
             <Inbox {...props} />
@@ -372,12 +374,14 @@ export default function App() {
           initialDrafts={create === "drafts"}
           onClose={() => setCreate(null)}
           notify={setToast}
+          navigate={navigate}
         />
       )}
       <NotificationPanel
         open={notificationsOpen}
         items={notificationItems}
         onClose={() => setNotificationsOpen(false)}
+        navigate={navigate}
       />
       {toast && (
         <div className="toast" role="status">

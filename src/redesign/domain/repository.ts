@@ -1,5 +1,6 @@
 import { createSeedProductState } from './seeds';
 import type { ProductState, SavedItem, ProductProject } from './types';
+import { toggleRemoteSavedItem, updateRemoteProject } from '../../lib/supabase/api';
 
 export const productStorageKey = 'circle:product-domain-v1';
 type Listener = () => void;
@@ -38,10 +39,22 @@ export function createProductRepository() {
       const exists = state.savedItems.some(saved => saved.id === item.id && saved.kind === item.kind);
       state = { ...state, savedItems: exists ? state.savedItems.filter(saved => saved.id !== item.id || saved.kind !== item.kind) : [...state.savedItems, { ...item }] };
       persist();
+      toggleRemoteSavedItem({
+        itemId: item.id,
+        kind: item.kind,
+        title: item.title,
+        subtitle: item.content,
+      }).catch(() => {});
     },
     updateProject(project: ProductProject) {
       state = { ...state, projects: state.projects.some(item => item.id === project.id) ? state.projects.map(item => item.id === project.id ? {...project} : item) : [...state.projects, {...project}] };
       persist();
+      updateRemoteProject({
+        id: project.id,
+        title: project.title,
+        phase: project.phase,
+        progress: project.progress,
+      }).catch(() => {});
     },
     reset() { state = createSeedProductState(); persist(); },
   };

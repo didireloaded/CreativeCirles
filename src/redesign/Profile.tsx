@@ -16,6 +16,7 @@ import type { ScreenProps } from "./types";
 import Modal from "./Modal";
 import { persistOnboarding } from "./onboarding/model";
 import BottomSheet from "./components/BottomSheet";
+import AuthDialog from "./components/AuthDialog";
 import "./profile.css";
 
 const profileImages = [
@@ -37,6 +38,7 @@ export default function Profile({
 }: ScreenProps) {
   const [tab, setTab] = useState<"Work" | "Projects" | "About">("Work");
   const [edit, setEdit] = useState(false);
+  const [authOpen, setAuthOpen] = useState(false);
   const [saved, setSaved] = useState(() => ({
       name: profile.displayName || "Jordan K.",
       bio:
@@ -106,6 +108,13 @@ export default function Profile({
           >
             <Palette size={16} /> Creative tools
           </button>
+          <button
+            className="button secondary"
+            onClick={() => setAuthOpen(true)}
+            aria-label="Account and cloud sync"
+          >
+            <Settings size={16} /> Account
+          </button>
         </div>
         <p className="pf-bio">{saved.bio}</p>
         <div className="pf-meta">
@@ -170,7 +179,7 @@ export default function Profile({
               <button
                 className="button primary"
                 onClick={() =>
-                  navigate("projects")
+                  navigate("projects?item=between-sand-sky")
                 }
               >
                 View project <ArrowUpRight size={16} />
@@ -258,6 +267,7 @@ export default function Profile({
           </form>
         </Modal>
       )}
+      <AuthDialog open={authOpen} onClose={() => setAuthOpen(false)} notify={notify} />
     </div>
   );
 }

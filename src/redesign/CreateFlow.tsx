@@ -20,6 +20,7 @@ import Modal from "./Modal";
 import { photos } from "./data";
 import { readLocal, writeLocal } from "./storage";
 import MediaPreview, { validateMediaFile } from "./components/MediaPreview";
+import { createRemotePost } from "../lib/supabase/api";
 
 type Draft = {
   id: string;
@@ -32,10 +33,12 @@ export default function CreateFlow({
   onClose,
   notify,
   initialDrafts = false,
+  navigate,
 }: {
   onClose: () => void;
   notify: (m: string) => void;
   initialDrafts?: boolean;
+  navigate?: (page: string) => void;
 }) {
   const [screen, setScreen] = useState<"menu" | "more" | "compose" | "drafts">(
     initialDrafts ? "drafts" : "menu",
@@ -53,6 +56,42 @@ export default function CreateFlow({
     setTitle("");
     setBody("");
     setScreen("compose");
+  };
+  const resumeDraft = (d: Draft) => {
+    setKind(d.kind || "Post");
+    setTitle(d.title || "");
+    setBody(d.body || "");
+    setScreen("compose");
+  };
+  const handleMoreChoice = (itemTitle: string) => {
+    if (!navigate) {
+      openCompose(itemTitle);
+      return;
+    }
+    onClose();
+    switch (itemTitle) {
+      case "Job":
+        navigate("jobs?create=true");
+        break;
+      case "Collaboration":
+        navigate("inbox?tab=collaborations&createCollab=true");
+        break;
+      case "Service":
+        navigate("business?view=Services&create=true");
+        break;
+      case "Digital product":
+        navigate("business?view=Products&create=true");
+        break;
+      case "Skill swap":
+        navigate("skill-swap?create=true");
+        break;
+      case "Community":
+        navigate("discover?view=Communities");
+        break;
+      default:
+        openCompose(itemTitle);
+        break;
+    }
   };
   const save = () => {
     const d = {
@@ -97,27 +136,45 @@ export default function CreateFlow({
               n: "Post",
               d: "Share a quick thought or piece of work",
               i: <Image />,
+              act: () => openCompose("Post"),
             },
             {
               n: "Project",
               d: "Tell the full story behind your work",
               i: <FolderKanban />,
+              act: () => {
+                if (navigate) {
+                  onClose();
+                  navigate("projects?create=true");
+                } else {
+                  openCompose("Project");
+                }
+              },
             },
             {
               n: "Story",
               d: "Share a moment for the next 24 hours",
               i: <Plus />,
+              act: () => openCompose("Story"),
             },
             {
               n: "Event",
               d: "Bring your creative circle together",
               i: <CalendarDays />,
+              act: () => {
+                if (navigate) {
+                  onClose();
+                  navigate("discover?view=Events");
+                } else {
+                  openCompose("Event");
+                }
+              },
             },
           ].map((x) => (
             <button
               key={x.n}
               aria-label={`${x.n}. ${x.d}`}
-              onClick={() => openCompose(x.n)}
+              onClick={x.act}
             >
               <span>{x.i}</span>
               <b>{x.n}</b>
@@ -147,7 +204,7 @@ export default function CreateFlow({
               { n: "Digital product", d: "Prepare a resource or template listing", i: <FolderKanban /> },
               { n: "Skill swap", d: "Offer one skill in exchange for another", i: <Users /> },
               { n: "Community", d: "Start a focused creative circle", i: <Plus /> },
-            ].map(item => <button key={item.n} onClick={() => openCompose(item.n)}><span>{item.i}</span><strong>{item.n}</strong><small>{item.d}</small></button>)}
+            ].map(item => <button key={item.n} onClick={() => handleMoreChoice(item.n)}><span>{item.i}</span><strong>{item.n}</strong><small>{item.d}</small></button>)}
           </div>
           <button className="button secondary create-ideas" onClick={() => setScreen("drafts")}><Lightbulb /> Open saved ideas</button>
         </section>
@@ -157,8 +214,43 @@ export default function CreateFlow({
           className="compose"
           onSubmit={(e) => {
             e.preventDefault();
+            if (kind === "Post") {
+              try {
+                const newPost = {
+                  id: `post-${Date.now()}`,
+                  author: "You",
+                  authorRole: "Creator",
+                  avatar: photos.portrait,
+                  caption: title ? `${title} — ${body}` : body || "New post",
+                  image: media ? URL.createObjectURL(media) : photos.art,
+                  likes: 1,
+                  comments: 0,
+                  date: "Just now",
+                  time: "Just now",
+                  category: "Photography",
+                };
+                const existing = readLocal<Record<string, unknown>[]>(
+                  "feed-local-posts",
+                  [],
+                );
+                writeLocal("feed-local-posts", [newPost, ...existing]);
+                createRemotePost({
+                  title: title.trim() || "Creative update",
+                  caption: body.trim() || "Shared to the community feed.",
+                  category: "Photography",
+                  imageUrl: photos.art,
+                  authorName: "You",
+                  authorHandle: "you.creates",
+                }).catch(() => {});
+              } catch {
+                /* Preview storage fallback */
+              }
+            }
             notify(`${kind} preview created locally. No file was uploaded.`);
             onClose();
+            if (navigate && kind === "Post") {
+              navigate("home");
+            }
           }}
         >
           <button
@@ -294,7 +386,16 @@ export default function CreateFlow({
             <div className="draft-stack">
               {drafts.map((d, i) => (
                 <article key={d.id} style={{ "--i": i } as React.CSSProperties}>
-                  <div>
+                  <div
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => resumeDraft(d)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") resumeDraft(d);
+                    }}
+                    style={{ cursor: "pointer" }}
+                    aria-label={`Resume editing ${d.title}`}
+                  >
                     <span>{d.kind} · On this device</span>
                     <h4>{d.title}</h4>
                     <p>{d.body || "A thought waiting for its next line."}</p>
@@ -305,7 +406,10 @@ export default function CreateFlow({
                     </div>
                   </div>
                   <button
-                    onClick={() => remove(d.id)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      remove(d.id);
+                    }}
                     aria-label={`Delete ${d.title}`}
                   >
                     <Trash2 />

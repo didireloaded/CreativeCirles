@@ -6,14 +6,12 @@ import "../opportunities/opportunities.css";
 import "./saved.css";
 import BottomSheet from "../components/BottomSheet";
 import type { SavedItem } from "../domain/types";
-import { useNavigate } from "react-router-dom";
 export default function SavedItems({
   navigate,
 }: {
-  navigate: (p: Page) => void;
+  navigate: (p: Page | string) => void;
 }) {
   const { state, toggleSaved } = useProductDomain();
-  const router = useNavigate();
   const [selected, setSelected] = useState<SavedItem | null>(null);
   const [query, setQuery] = useState("");
   const [kind, setKind] = useState("All");
@@ -95,7 +93,7 @@ export default function SavedItems({
         )}
       </section>
       <BottomSheet open={Boolean(selected)} title={selected?.title || "Saved item"} onClose={() => setSelected(null)}>
-        {selected && <div className="saved-detail"><p className="eyebrow">{selected.kind}</p><h2>{selected.title}</h2>{selected.content && <pre>{selected.content}</pre>}<button className="button primary" onClick={() => { const routes:Record<string,Page>={work:'home',job:'jobs',creator:'talent',project:'projects',opportunity:'buzz',template:'ai-studio',product:'business'}; router(`/${routes[selected.kind]}?item=${encodeURIComponent(selected.id)}`); }}>Open {selected.kind === 'template' ? 'Drafting Studio' : selected.kind}</button></div>}
+        {selected && <div className="saved-detail"><p className="eyebrow">{selected.kind}</p><h2>{selected.title}</h2>{selected.content && <pre>{selected.content}</pre>}<button className="button primary" onClick={() => { const routes:Record<string,string>={work:'home',job:'jobs',creator:'talent',project:'projects',opportunity:'buzz',template:'ai-studio',product:'business'}; const target = routes[selected.kind] || 'tools'; navigate(`${target}?item=${encodeURIComponent(selected.id)}`); }}>Open {selected.kind === 'template' ? 'Drafting Studio' : selected.kind}</button></div>}
       </BottomSheet>
     </main>
   );

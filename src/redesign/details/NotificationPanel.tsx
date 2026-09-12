@@ -26,10 +26,12 @@ export default function NotificationPanel({
   open,
   items,
   onClose,
+  navigate,
 }: {
   open: boolean;
   items: NotificationItem[];
   onClose: () => void;
+  navigate?: (path: string) => void;
 }) {
   const [read, setRead] = useState<string[]>(readIds);
   const markAll = () => {
@@ -39,6 +41,26 @@ export default function NotificationPanel({
       localStorage.setItem("circle:read-notifications", JSON.stringify(next));
     } catch {
       /* Session state remains visible. */
+    }
+  };
+  const handleItemClick = (item: NotificationItem) => {
+    const next = [...new Set([...read, item.id])];
+    setRead(next);
+    try {
+      localStorage.setItem("circle:read-notifications", JSON.stringify(next));
+    } catch {
+      /* Session state remains visible. */
+    }
+    onClose();
+    if (!navigate) return;
+    if (item.type === "comment") {
+      navigate("home?post=dunes");
+    } else if (item.type === "collaboration") {
+      navigate("inbox?chat=leo&tab=collaborations");
+    } else if (item.type === "project") {
+      navigate("projects?item=between-sand-sky");
+    } else {
+      navigate("home");
     }
   };
   const icon = (type?: NotificationItem["type"]) =>
@@ -74,9 +96,11 @@ export default function NotificationPanel({
                 <p className="eyebrow">{group}</p>
                 <div className="notification-list">
                   {grouped.map((item) => (
-                    <article
-                      className={read.includes(item.id) ? "is-read" : ""}
+                    <button
+                      type="button"
+                      className={`notification-item ${read.includes(item.id) ? "is-read" : ""}`}
                       key={item.id}
+                      onClick={() => handleItemClick(item)}
                     >
                       <span>{icon(item.type)}</span>
                       <div>
@@ -84,7 +108,7 @@ export default function NotificationPanel({
                         <p>{item.detail}</p>
                       </div>
                       <time>{item.time}</time>
-                    </article>
+                    </button>
                   ))}
                 </div>
               </section>

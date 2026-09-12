@@ -1,4 +1,4 @@
-import { ArrowUpRight, BadgeCheck, Handshake, MapPin } from "lucide-react";
+import { ArrowUpRight, BadgeCheck, Handshake, MapPin, MessageCircle } from "lucide-react";
 import BottomSheet from "../components/BottomSheet";
 import ImageWithFallback from "../components/ImageWithFallback";
 import type { Creator } from "../types";
@@ -8,11 +8,15 @@ export default function CreatorDetail({
   creator,
   onClose,
   onCollaborate,
+  onMessage,
+  notify,
 }: {
   open: boolean;
   creator: Creator | null;
   onClose: () => void;
   onCollaborate: (creator: Creator) => void;
+  onMessage?: (creator: Creator) => void;
+  notify?: (message: string) => void;
 }) {
   if (!creator) return null;
   return (
@@ -52,13 +56,24 @@ export default function CreatorDetail({
           </small>
         </div>
       </div>
-      <button
-        className="button primary creator-collaborate"
-        onClick={() => onCollaborate(creator)}
-      >
-        <Handshake />
-        Send collaboration request
-      </button>
+      <div className="creator-actions-row">
+        <button
+          className="button primary creator-collaborate"
+          onClick={() => onCollaborate(creator)}
+        >
+          <Handshake />
+          Send collaboration request
+        </button>
+        {onMessage && (
+          <button
+            className="button secondary creator-message"
+            onClick={() => onMessage(creator)}
+          >
+            <MessageCircle />
+            Direct message
+          </button>
+        )}
+      </div>
       <section>
         <p className="eyebrow">SKILLS</p>
         <div className="detail-chips">
@@ -101,7 +116,15 @@ export default function CreatorDetail({
       </section>
       <nav className="creator-links" aria-label="Illustrative social links">
         {creator.socialLinks.map((link) => (
-          <button key={link} onClick={() => undefined}>
+          <button
+            key={link}
+            onClick={() => {
+              if (navigator.clipboard) {
+                navigator.clipboard.writeText(`https://${link}`).catch(() => {});
+              }
+              if (notify) notify(`${link} copied to clipboard.`);
+            }}
+          >
             {link}
             <ArrowUpRight />
           </button>

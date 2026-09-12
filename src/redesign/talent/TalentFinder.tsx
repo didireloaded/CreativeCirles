@@ -26,7 +26,7 @@ export default function TalentFinder({
   navigate,
 }: {
   notify: (message: string) => void;
-  navigate: (page: Page) => void;
+  navigate: (page: Page | string) => void;
 }) {
   const { state, toggleSaved } = useProductDomain();
   const [personDetail,setPersonDetail] = useState<Creator|null>(()=>creators.find(person=>person.id===new URLSearchParams(location.search).get("item"))||null);
@@ -194,6 +194,11 @@ export default function TalentFinder({
                     onClick={() => {
                       const drafts = readLocal<{id:string;title:string;need:string}[]>("collaboration-posts",[]);
                       writeLocal("collaboration-posts",[{id:crypto.randomUUID(),title:`Collaboration with ${person.name}`,need:person.role},...drafts]);
+                      writeLocal("cc-pending-collaboration", {
+                        title: `Collaboration with ${person.name}`,
+                        need: person.role,
+                        collaboratorId: person.id,
+                      });
                       notify("Collaboration draft added to Inbox → Collaborations.");
                       navigate("inbox");
                     }}
@@ -238,7 +243,22 @@ export default function TalentFinder({
         })}
       </section>
       {!list.length && <div className="saved-empty"><h2>No matching creatives</h2><p>Try another skill or clear your search.</p><button className="button secondary" onClick={()=>{setSkill("All");setQuery("");setAvailable(false);}}>Clear filters</button></div>}
-      <CreatorDetail open={Boolean(personDetail)} creator={personDetail} onClose={()=>setPersonDetail(null)} onCollaborate={person=>{const drafts=readLocal<{id:string;title:string;need:string}[]>("collaboration-posts",[]);writeLocal("collaboration-posts",[{id:crypto.randomUUID(),title:`Collaboration with ${person.name}`,need:person.role},...drafts]);setPersonDetail(null);navigate("inbox");notify("Draft available in Collaborations.");}} />
+      <CreatorDetail
+        open={Boolean(personDetail)}
+        creator={personDetail}
+        onClose={() => setPersonDetail(null)}
+        onCollaborate={(person) => {
+          const drafts = readLocal<{id:string;title:string;need:string}[]>("collaboration-posts",[]);
+          writeLocal("collaboration-posts",[{id:crypto.randomUUID(),title:`Collaboration with ${person.name}`,need:person.role},...drafts]);
+          setPersonDetail(null);
+          navigate(`inbox?chat=${person.id}&tab=collaborations&createCollab=true`);
+          notify("Draft available in Collaborations.");
+        }}
+        onMessage={(person) => {
+          setPersonDetail(null);
+          navigate(`inbox?chat=${person.id}`);
+        }}
+      />
       {compare.length > 0 && (
         <TalentCompare people={selected} onClose={() => setCompare([])} />
       )}

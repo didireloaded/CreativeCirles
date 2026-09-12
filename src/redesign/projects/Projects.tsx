@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   ArrowLeft,
   ArrowUpRight,
@@ -32,7 +32,7 @@ export default function Projects({
   navigate,
 }: {
   notify: (m: string) => void;
-  navigate: (p: Page) => void;
+  navigate: (p: Page | string) => void;
 }) {
   const { state, updateProject } = useProductDomain();
   const [selected, setSelected] = useState<string | null>(()=>new URLSearchParams(location.search).get("item"));
@@ -42,6 +42,17 @@ export default function Projects({
   const [budgetEditor,setBudgetEditor] = useState(false);
   const [budgetLabel,setBudgetLabel] = useState("");
   const [budgetAmount,setBudgetAmount] = useState(0);
+  const [newProjectOpen, setNewProjectOpen] = useState(false);
+  const [newProjectTitle, setNewProjectTitle] = useState("");
+  const [newProjectBrief, setNewProjectBrief] = useState("");
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const item = params.get("item");
+    if (item) setSelected(item);
+    if (params.get("create") === "true") setNewProjectOpen(true);
+  }, []);
+
   const project = state.projects.find((p) => p.id === selected);
   const phase = project?.phase || "Development";
   const approved = Boolean(project && approvals[project.id]);
@@ -65,7 +76,7 @@ export default function Projects({
           <div>
             <button
               className="button secondary"
-              onClick={() => navigate("inbox")}
+              onClick={() => navigate("inbox?chat=leo")}
             >
               <MessageCircle />
               Conversation
@@ -151,17 +162,35 @@ export default function Projects({
             <div className="project-team">
               {creators.slice(0, 4).map((p, i) => (
                 <article key={p.id}>
-                  <img src={p.image} alt="" />
-                  <div>
-                    <strong>{p.name}</strong>
-                    <span>
-                      {i === 0
-                        ? "Creative lead"
-                        : i === 1
-                          ? "Film lead"
-                          : "Collaborator"}
-                    </span>
-                  </div>
+                  <button
+                    type="button"
+                    onClick={() => navigate(`discover?creator=${p.id}`)}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 12,
+                      background: "none",
+                      border: "none",
+                      padding: 0,
+                      cursor: "pointer",
+                      font: "inherit",
+                      color: "inherit",
+                      textAlign: "left",
+                    }}
+                    aria-label={`View ${p.name}'s profile`}
+                  >
+                    <img src={p.image} alt="" />
+                    <div>
+                      <strong>{p.name}</strong>
+                      <span>
+                        {i === 0
+                          ? "Creative lead"
+                          : i === 1
+                            ? "Film lead"
+                            : "Collaborator"}
+                      </span>
+                    </div>
+                  </button>
                   <progress max="100" value={75 - i * 12} />
                 </article>
               ))}
@@ -275,6 +304,13 @@ export default function Projects({
         <span>
           <strong>2</strong>milestones this week
         </span>
+        <button
+          className="button primary"
+          style={{ marginLeft: "auto", fontSize: 12, padding: "8px 14px", display: "flex", alignItems: "center", gap: 6 }}
+          onClick={() => setNewProjectOpen(true)}
+        >
+          <Plus size={15} /> New project
+        </button>
       </div>
       <section className="project-cards">
         {state.projects.map((p, i) => (
@@ -303,6 +339,48 @@ export default function Projects({
           </button>
         ))}
       </section>
+      <BottomSheet open={newProjectOpen} title="Start a new project" onClose={() => setNewProjectOpen(false)}>
+        <form
+          className="product-editor"
+          onSubmit={(e) => {
+            e.preventDefault();
+            const createdProject: ProductProject = {
+              id: `project-${Date.now()}`,
+              title: newProjectTitle.trim() || "Untitled Project",
+              phase: "Development",
+              progress: 10,
+              dueLabel: "In 30 days",
+            };
+            updateProject(createdProject);
+            setNewProjectOpen(false);
+            setNewProjectTitle("");
+            setNewProjectBrief("");
+            setSelected(createdProject.id);
+            notify(`Project "${createdProject.title}" initialized locally.`);
+          }}
+        >
+          <label>
+            Project title
+            <input
+              required
+              value={newProjectTitle}
+              onChange={(e) => setNewProjectTitle(e.target.value)}
+              placeholder="e.g. Desert Echoes Editorial"
+            />
+          </label>
+          <label>
+            Brief / Description
+            <textarea
+              value={newProjectBrief}
+              onChange={(e) => setNewProjectBrief(e.target.value)}
+              placeholder="What is this project exploring?"
+            />
+          </label>
+          <button className="button primary" type="submit">
+            Create project
+          </button>
+        </form>
+      </BottomSheet>
     </main>
   );
 }

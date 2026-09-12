@@ -3,15 +3,23 @@ import { MessageCircle, Send, Share2 } from 'lucide-react';
 import BottomSheet from '../components/BottomSheet';
 import ImageWithFallback from '../components/ImageWithFallback';
 import type { Comment, CreativePost, Creator } from '../types';
+import { createRemoteComment } from '../../lib/supabase/api';
 
-type Props = { open: boolean; post: CreativePost | null; creator: Creator | null; onClose: () => void; notify: (message: string) => void };
+type Props = {
+  open: boolean;
+  post: CreativePost | null;
+  creator: Creator | null;
+  onClose: () => void;
+  notify: (message: string) => void;
+  onSelectCreator?: (creator: Creator) => void;
+};
 
 function readComments(id: string): Comment[] {
   try { const value: unknown = JSON.parse(localStorage.getItem(`circle:comments:${id}`) || '[]'); return Array.isArray(value) ? value as Comment[] : []; }
   catch { return []; }
 }
 
-export default function PostDetail({ open, post, creator, onClose, notify }: Props) {
+export default function PostDetail({ open, post, creator, onClose, notify, onSelectCreator }: Props) {
   const [draft, setDraft] = useState('');
   const [comments, setComments] = useState<Comment[]>(() => post ? readComments(post.id) : []);
   const storageId = post?.id;
@@ -22,6 +30,7 @@ export default function PostDetail({ open, post, creator, onClose, notify }: Pro
     const next = [...comments, { id: `${Date.now()}`, author: 'You', body, createdAt: 'Just now' }];
     setComments(next); setDraft('');
     try { localStorage.setItem(`circle:comments:${post.id}`, JSON.stringify(next)); } catch { /* Keep comments useful for the session. */ }
+    createRemoteComment(post.id, body).catch(() => {});
     notify('Comment added to this local preview.');
   };
   const share = async () => {
@@ -32,7 +41,22 @@ export default function PostDetail({ open, post, creator, onClose, notify }: Pro
   };
   return <BottomSheet open={open} title={post.title} onClose={onClose} className="detail-sheet">
     <ImageWithFallback src={post.image} alt={post.title} ratio="16 / 11" />
-    <div className="detail-author"><ImageWithFallback src={creator.image} alt="" ratio="1" /><div><strong>{creator.name}</strong><span>{creator.role} · @{creator.handle}</span></div></div>
+    {onSelectCreator ? (
+      <button
+        type="button"
+        className="detail-author detail-author-btn"
+        onClick={() => { onClose(); onSelectCreator(creator); }}
+        aria-label={`View ${creator.name} profile`}
+      >
+        <ImageWithFallback src={creator.image} alt="" ratio="1" />
+        <div><strong>{creator.name}</strong><span>{creator.role} · @{creator.handle}</span></div>
+      </button>
+    ) : (
+      <div className="detail-author">
+        <ImageWithFallback src={creator.image} alt="" ratio="1" />
+        <div><strong>{creator.name}</strong><span>{creator.role} · @{creator.handle}</span></div>
+      </div>
+    )}
     <p className="detail-caption">{post.caption}</p>
     <div className="detail-meta"><span>{post.likes} appreciations</span><span>{post.comments + visibleComments.length} comments</span><button onClick={share}><Share2 />Share</button></div>
     <section className="detail-comments" aria-labelledby="comments-title"><h3 id="comments-title"><MessageCircle />Conversation</h3>

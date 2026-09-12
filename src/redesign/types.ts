@@ -5,7 +5,7 @@ export type PrimaryPage = 'home' | 'discover' | 'tasks' | 'inbox';
 export type Page = PrimaryPage | 'profile' | 'workspace' | 'tools' | 'jobs' | 'talent' | 'projects' | 'buzz' | 'skill-swap' | 'ai-studio' | 'business' | 'saved';
 export interface ScreenProps {
   notify: (message: string) => void;
-  navigate: (page: Page) => void;
+  navigate: (page: Page | string) => void;
   openCreate: () => void;
   openDrafts: () => void;
   profile: OnboardingProfile;

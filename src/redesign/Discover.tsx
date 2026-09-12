@@ -205,7 +205,13 @@ export default function Discover({
   navigate,
 }: ScreenProps) {
   const previewState = new URLSearchParams(window.location.search).get("state");
-  const [view, setView] = useState<View>("For you");
+  const [view, setView] = useState<View>(() => {
+    const param = new URLSearchParams(window.location.search).get("view");
+    if (param && views.includes(param as View)) {
+      return param as View;
+    }
+    return "For you";
+  });
   const [category, setCategory] = useState<Category>(() => {
     try {
       const value = localStorage.getItem("cc-preferred-discipline");
@@ -232,6 +238,26 @@ export default function Discover({
   const [interested, toggleInterested] = useSavedSet("cc-discover-events");
   const dialog = useRef<HTMLDialogElement>(null);
   const search = query.trim().toLowerCase();
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const viewParam = params.get("view");
+    if (viewParam && views.includes(viewParam as View)) {
+      setView(viewParam as View);
+    }
+    const creatorParam = params.get("creator");
+    if (creatorParam) {
+      const found = creators.find(
+        (c) => c.id === creatorParam || c.name.toLowerCase() === creatorParam.toLowerCase(),
+      );
+      if (found) setSelectedCreator(found);
+    }
+    const workParam = params.get("work") || params.get("item");
+    if (workParam) {
+      const found = works.find((w) => w.id === workParam);
+      if (found) setSelected(found);
+    }
+  }, []);
   const matchCategory = (value: string) =>
     category === "All" || category === value;
 
@@ -712,7 +738,16 @@ export default function Discover({
               <p className="eyebrow">{selected.category}</p>
               <h2 id="ds-detail-title">{selected.title}</h2>
               <p className="ds-detail-description">{selected.description}</p>
-              <div className="ds-detail-author">
+              <button
+                type="button"
+                className="ds-detail-author ds-detail-author-btn"
+                onClick={() => {
+                  const author = creators[selected.creator];
+                  closeDetail();
+                  setSelectedCreator(author);
+                }}
+                aria-label={`View ${creators[selected.creator].name}'s profile`}
+              >
                 <img
                   className="avatar"
                   src={creators[selected.creator].image}
@@ -722,7 +757,7 @@ export default function Discover({
                   <strong>{creators[selected.creator].name}</strong>
                   <span>{creators[selected.creator].role}</span>
                 </div>
-              </div>
+              </button>
               <button
                 className={`button ${saved.includes(selected.id) ? "secondary" : "primary"} ds-detail-save`}
                 aria-pressed={saved.includes(selected.id)}
@@ -822,13 +857,33 @@ export default function Discover({
         onClose={() => setSelectedCreator(null)}
         onCollaborate={(creator) => {
           setSelectedCreator(null);
-          notify(`Collaboration request to ${creator.name} saved locally.`);
+          try {
+            const draft = {
+              title: `Collaboration with ${creator.name}`,
+              recipient: creator.name,
+              recipientId: creator.id,
+              date: new Date().toISOString(),
+            };
+            localStorage.setItem("cc-pending-collaboration", JSON.stringify(draft));
+          } catch {
+            /* Preview storage fallback */
+          }
+          notify(`Drafting collaboration with ${creator.name}...`);
+          navigate(`inbox?chat=${creator.id}&tab=collaborations&createCollab=true`);
+        }}
+        onMessage={(creator) => {
+          setSelectedCreator(null);
+          navigate(`inbox?chat=${creator.id}`);
         }}
       />
       <CommunityDetail
         open={Boolean(selectedCommunity)}
         community={selectedCommunity}
         onClose={() => setSelectedCommunity(null)}
+        onSelectCreator={(creator) => {
+          setSelectedCommunity(null);
+          setSelectedCreator(creator);
+        }}
         notify={notify}
       />
     </div>

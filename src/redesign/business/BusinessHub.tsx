@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   ArrowLeft,
   BarChart3,
@@ -30,7 +30,7 @@ export default function BusinessHub({
   navigate,
 }: {
   notify: (m: string) => void;
-  navigate: (p: Page) => void;
+  navigate: (p: Page | string) => void;
 }) {
   const [view, setView] = useState<View>("Services");
   const [services,setServices] = useLocalState<Service[]>("business-services",[{id:"portrait",title:"Editorial portrait session",description:"Concept call, half-day shoot, 12 carefully finished images.",rate:"N$650/hour · N$2,800/half-day · N$5,200/full-day",paused:false}]);
@@ -40,6 +40,21 @@ export default function BusinessHub({
   const [productForm,setProductForm] = useState<typeof product|null>(null);
   const [benefits,setBenefits] = useLocalState("free-tier-benefits","Public work and updates");
   const [benefitForm,setBenefitForm] = useState<string|null>(null);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const viewParam = params.get("view");
+    if (viewParam && views.includes(viewParam as View)) {
+      setView(viewParam as View);
+    }
+    if (params.get("create") === "true") {
+      if (viewParam === "Products") {
+        setProductForm(product);
+      } else {
+        setEditing({id:crypto.randomUUID(),title:"",description:"",rate:"",paused:false});
+      }
+    }
+  }, []);
   return (
     <main className="business-page">
       <header className="business-hero">
@@ -164,7 +179,7 @@ export default function BusinessHub({
               </label>
               <button
                 className="button secondary"
-                onClick={() => navigate("inbox")}
+                onClick={() => navigate("inbox?chat=nia")}
               >
                 Open conversation
               </button>

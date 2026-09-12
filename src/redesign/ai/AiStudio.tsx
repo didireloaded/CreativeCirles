@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   ArrowLeft,
   NotebookPen,
@@ -43,7 +43,7 @@ export default function AiStudio({
   openTaskDraft,
 }: {
   notify: (m: string) => void;
-  navigate: (p: Page) => void;
+  navigate: (p: Page | string) => void;
   openTaskDraft?: (draft: TaskDraft) => void;
 }) {
   const { toggleSaved } = useProductDomain();
@@ -55,6 +55,18 @@ export default function AiStudio({
   const [rate, setRate] = useState(650);
   const [expenses, setExpenses] = useState(0);
   const [contingency, setContingency] = useState(10);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const toolParam = params.get("tool");
+    if (toolParam && tools.includes(toolParam)) {
+      setTool(toolParam);
+    }
+    const itemParam = params.get("item");
+    if (itemParam) {
+      setSubject(decodeURIComponent(itemParam));
+    }
+  }, []);
   return (
     <main className="ai-page">
       <header className="ai-hero">

@@ -38,11 +38,27 @@ describe('creative detail flows', () => {
     expect(screen.getByText('The framing feels intentional.')).toBeVisible();
   });
 
+  it('opens creator profile when clicking author row in post detail', async () => {
+    const user = userEvent.setup();
+    const onSelectCreator = vi.fn();
+    render(<PostDetail open post={post} creator={creator} onClose={vi.fn()} notify={vi.fn()} onSelectCreator={onSelectCreator} />);
+    await user.click(screen.getByRole('button', { name: `View ${creator.name} profile` }));
+    expect(onSelectCreator).toHaveBeenCalledWith(creator);
+  });
+
   it('shows useful creator information and a collaboration action', () => {
     render(<CreatorDetail open creator={creator} onClose={vi.fn()} onCollaborate={vi.fn()} />);
     expect(screen.getByText('Editorial photography')).toBeVisible();
     expect(screen.getByText('Sony A7 IV')).toBeVisible();
     expect(screen.getByRole('button', { name: 'Send collaboration request' })).toBeVisible();
+  });
+
+  it('navigates to conversation when clicking Message in creator detail', async () => {
+    const user = userEvent.setup();
+    const onMessage = vi.fn();
+    render(<CreatorDetail open creator={creator} onClose={vi.fn()} onCollaborate={vi.fn()} onMessage={onMessage} />);
+    await user.click(screen.getByRole('button', { name: /Direct message/i }));
+    expect(onMessage).toHaveBeenCalledWith(creator);
   });
 
   it('persists community membership on this device', async () => {
@@ -80,10 +96,20 @@ describe('stories and notifications', () => {
 
   it('marks notifications read and explains an empty inbox', async () => {
     const user = userEvent.setup();
-    const { rerender } = render(<NotificationPanel open items={[{ id:'comment', group:'Today', title:'Amara commented on your project', detail:'The framing feels intentional.', time:'12 min' }]} onClose={vi.fn()} />);
+    const { rerender } = render(<NotificationPanel open items={[{ id:'comment', type:'comment', group:'Today', title:'Amara commented on your project', detail:'The framing feels intentional.', time:'12 min' }]} onClose={vi.fn()} />);
     await user.click(screen.getByRole('button', { name: 'Mark all as read' }));
     expect(localStorage.getItem('circle:read-notifications')).toContain('comment');
     rerender(<NotificationPanel open items={[]} onClose={vi.fn()} />);
     expect(screen.getByText('You’re all caught up. Collaboration, comment, and project updates will appear here.')).toBeVisible();
+  });
+
+  it('navigates directly to linked content when clicking notification item', async () => {
+    const user = userEvent.setup();
+    const navigate = vi.fn();
+    const onClose = vi.fn();
+    render(<NotificationPanel open items={[{ id:'comment-1', type:'comment', group:'Today', title:'Amara commented on your project', detail:'The framing feels intentional.', time:'12 min' }]} onClose={onClose} navigate={navigate} />);
+    await user.click(screen.getByRole('button', { name: /Amara commented on your project/i }));
+    expect(navigate).toHaveBeenCalledWith('home?post=dunes');
+    expect(onClose).toHaveBeenCalled();
   });
 });

@@ -2,7 +2,7 @@ import { BellOff, Check, Flag, Pin, Send, Users } from "lucide-react";
 import { useState } from "react";
 import BottomSheet from "../components/BottomSheet";
 import ImageWithFallback from "../components/ImageWithFallback";
-import type { Community } from "../types";
+import type { Community, Creator } from "../types";
 
 function readJoined(): string[] {
   try {
@@ -20,11 +20,13 @@ export default function CommunityDetail({
   community,
   onClose,
   notify,
+  onSelectCreator,
 }: {
   open: boolean;
   community: Community | null;
   onClose: () => void;
   notify: (message: string) => void;
+  onSelectCreator?: (creator: Creator) => void;
 }) {
   const [joined, setJoined] = useState<string[]>(readJoined);
   const [muted, setMuted] = useState(false);
@@ -102,10 +104,21 @@ export default function CommunityDetail({
         <p className="eyebrow">PEOPLE IN THIS CIRCLE</p>
         <div className="community-members">
           {community.memberPreviews.map((member) => (
-            <div key={member.id}>
+            <button
+              type="button"
+              className="community-member-btn"
+              key={member.id}
+              onClick={() => {
+                if (onSelectCreator) {
+                  onClose();
+                  onSelectCreator(member);
+                }
+              }}
+              aria-label={`View ${member.name} profile`}
+            >
               <ImageWithFallback src={member.image} alt="" ratio="1" />
               <span>{member.name}</span>
-            </div>
+            </button>
           ))}
         </div>
       </section>

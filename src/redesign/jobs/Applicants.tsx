@@ -8,7 +8,7 @@ const initial = [
 export default function Applicants({
   navigate,
 }: {
-  navigate: (page: "inbox" | "projects") => void;
+  navigate: (page: string) => void;
 }) {
   const [people, setPeople] = useLocalState("applicant-stages", initial);
   return (
@@ -19,10 +19,25 @@ export default function Applicants({
       </div>
       {people.map((person) => (
         <article key={person.id}>
-          <div>
+          <button
+            type="button"
+            onClick={() => navigate(`discover?creator=${person.id}`)}
+            style={{
+              background: "none",
+              border: "none",
+              padding: 0,
+              cursor: "pointer",
+              font: "inherit",
+              color: "inherit",
+              textAlign: "left",
+              display: "flex",
+              flexDirection: "column",
+            }}
+            aria-label={`View ${person.name}'s profile`}
+          >
             <strong>{person.name}</strong>
             <span>{person.role}</span>
-          </div>
+          </button>
           <label>
             Stage
             <select
@@ -47,7 +62,7 @@ export default function Applicants({
           <button
             className="icon-button"
             aria-label={`Message ${person.name}`}
-            onClick={() => navigate("inbox")}
+            onClick={() => navigate(`inbox?chat=${person.id}`)}
           >
             <ArrowUpRight />
           </button>

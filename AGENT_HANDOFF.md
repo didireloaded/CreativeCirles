@@ -215,38 +215,134 @@ Restore a colorful product identity without replacing the approved off-white app
 ### 2026-09-12 — Antigravity
 
 **Task**
-Continue and complete Codex's uncommitted work for the secondary product modules and local state integration, and resolve testing failures.
+Wire every single feature, function, button, and navigation flow across the entire application so every click leads to its logical destination with full inter-screen flow and deep-linking.
 
 **Changed**
-- `src/redesign/jobs/*`
-- `src/redesign/projects/*`
-- `src/redesign/business/*`
-- `src/redesign/talent/*`
-- `src/redesign/saved/*`
-- `src/redesign/domain/*`
-- `src/redesign/storage.ts`
+- `src/redesign/routing.ts`
+- `src/redesign/types.ts`
 - `src/redesign/App.tsx`
 - `src/redesign/Home.tsx`
-- `src/redesign/__tests__/page-states.test.tsx`
+- `src/redesign/Discover.tsx`
+- `src/redesign/CreateFlow.tsx`
+- `src/redesign/Inbox.tsx`
+- `src/redesign/Workspace.tsx`
+- `src/redesign/Profile.tsx`
+- `src/redesign/details/NotificationPanel.tsx`
+- `src/redesign/details/PostDetail.tsx`
+- `src/redesign/details/CreatorDetail.tsx`
+- `src/redesign/details/CommunityDetail.tsx`
+- `src/redesign/details/details.css`
+- `src/redesign/jobs/Jobs.tsx`
+- `src/redesign/jobs/Applicants.tsx`
+- `src/redesign/opportunities/Opportunities.tsx`
+- `src/redesign/projects/Projects.tsx`
+- `src/redesign/business/BusinessHub.tsx`
+- `src/redesign/ai/AiStudio.tsx`
+- `src/redesign/saved/SavedItems.tsx`
+- `src/redesign/talent/TalentFinder.tsx`
+- `src/redesign/tasks/Tasks.tsx`
+- `src/redesign/tasks/TaskDetail.tsx`
+- `src/redesign/__tests__/details.test.tsx`
 
 **Key decisions**
-- Adopted the `useLocalState` storage pattern for persisting `JobEditor` listings, saved items, and hidden feed posts locally without a backend.
-- Wrapped `<Home />` in `<DomainProvider>` inside `page-states.test.tsx` to resolve the test crash caused by the new domain hook dependency.
-- Maintained the strict rule of no fake backend claims (JobEditor clarifies that "Public publishing will be available when the community launches").
+- Expanded `routing.ts` and `ScreenProps['navigate']` to accept query params (e.g. `inbox?chat=leo`, `home?post=dunes`, `discover?view=Communities`, `projects?item=between-sand-sky`, `business?view=Services&create=true`) while stripping query params during route matching so tab highlighting and screen mounting remain completely intact.
+- Replaced dead-end buttons with purposeful routing:
+  - `NotificationPanel`: Clicking any notification item marks it read, closes the panel, and routes to the linked post, conversation, or project.
+  - `PostDetail`: Author row is an interactive button opening the creator's profile sheet; clicking collaborate or message in `CreatorDetail` transitions to `inbox`.
+  - `CommunityDetail`: Member avatars open creator profiles.
+  - `CreateFlow`: "More ways to create" options route to Job creation (`jobs?create=true`), Collaboration (`inbox?tab=collaborations&createCollab=true`), Service (`business?view=Services&create=true`), Product (`business?view=Products&create=true`), Skill Swap (`skill-swap?create=true`), and Community (`discover?view=Communities`). Publishing a post saves to `feed-local-posts` and redirects to Home feed with the new post immediately visible. Draft cards resume editing in composer.
+  - `Workspace`: Overview stat cards (Active projects, Reminders today, Creative collaborators) route to Projects, Calendar, and Talent. Collaborator card provides direct Message and View Profile actions. Upcoming project brief links to `projects?item=between-sand-sky` and `inbox?chat=leo`.
+  - `TalentFinder`: Save draft to `collaboration-posts` and `cc-pending-collaboration` and navigate to `inbox`, opening the collaboration composer with pre-filled title.
+  - `SavedItems`: Rewired `Open item` to redesign `navigate` prop for all saved entities.
+- Maintained strict governance: no simulated payment checkouts or mock money flows, transparent local-preview state, preserved colorful off-white styling.
 
 **Verification**
-- `npm run typecheck` — passed.
-- `npm test -- --run` — 63 tests passed across 22 test files (fixed the 2 failing tests).
-- Inspected the diff against `PROJECT_GOVERNANCE.md` requirements.
+- `npm run typecheck`: 0 errors.
+- `npm run lint`: 0 errors (4 non-blocking react-hooks warnings).
+- `npm test -- --run`: 22 test files passed, 66 tests passed.
+- `npm run build`: Production build succeeded.
 
 **Known issues**
-- Still fully local-preview state; backend is required for full functionality.
+- Backend integration will eventually replace local storage persistence for posts, drafts, and messages.
 
 **Do not undo**
-- Ensure `<DomainProvider>` wraps any component that consumes `useProductDomain` during testing.
+- Preserve query-parameter stripping in `routing.ts`.
+- Preserve deep-link hydration across screens (`Inbox`, `Discover`, `Home`, `Jobs`, `BusinessHub`, `Opportunities`, `Projects`).
 
 **Next**
-- Begin the Supabase integration and connect the frontend UI to real backend state.
+- Proceed with backend API integration when backend services are ready.
+
+---
+
+### 2026-09-12 — Antigravity
+
+**Task**
+Implement the Supabase backend integration layer, typed client services, complete database schema migration, dual-mode persistence (online sync with resilient offline fallback), and authentication dialog bridge.
+
+**Changed**
+- `supabase/migrations/20260912200000_complete_backend_schema.sql`
+- `src/lib/supabase/database.types.ts`
+- `src/lib/supabase/api.ts`
+- `src/redesign/components/AuthDialog.tsx`
+- `src/redesign/Profile.tsx`
+- `src/redesign/CreateFlow.tsx`
+- `src/redesign/details/PostDetail.tsx`
+- `src/redesign/domain/repository.ts`
+- `src/redesign/__tests__/supabase-sync.test.ts`
+
+**Key decisions**
+- Prepared `20260912200000_complete_backend_schema.sql` with full table definitions for posts, comments, jobs, applications, projects, tasks, saved items, and conversations, including RLS policies and authenticated role grants.
+- Generated complete TypeScript definitions in `database.types.ts` and created `api.ts` with type-safe operations that catch errors and gracefully fall back to local storage when unauthenticated or offline.
+- Built `AuthDialog.tsx` enabling Email/Password sign-in, sign-up, and sign-out via Supabase Auth, accessible directly from `Profile.tsx` under "Account".
+- Wired dual-mode sync: `createRemotePost` in `CreateFlow.tsx`, `createRemoteComment` in `PostDetail.tsx`, and `toggleRemoteSavedItem` / `updateRemoteProject` in `repository.ts`.
+- Zero regressions on existing offline PWA architecture; all 66 existing unit tests pass, plus 2 new tests verifying the fallback behavior.
+
+**Verification**
+- `npm run typecheck`: 0 errors.
+- `npm run lint`: 0 errors.
+- `npm test -- --run`: 23 test files passed, 68 tests passed.
+- `npm run build`: Production bundle built in 1.54s.
+- `http://localhost:5173/`: Responding with HTTP 200.
+
+**Known issues**
+- The remote Supabase instance requires executing the forward SQL migration in the Supabase Dashboard SQL Editor to activate the new tables and RLS permissions on the remote database.
+
+**Do not undo**
+- Preserve the dual-mode offline-first fallback in all Supabase API helpers.
+
+**Next**
+- Apply migration `20260912200000_complete_backend_schema.sql` in the Supabase project dashboard when ready for live multi-user cloud sync.
+
+---
+
+### 2026-09-12 — Antigravity
+
+**Task**
+Configure Supabase remote MCP server integration and install Supabase agent skills.
+
+**Changed**
+- `~/.gemini/config/mcp_config.json`
+- `~/.gemini/antigravity/mcp_config.json`
+- `.agents/skills/supabase/*`
+- `.agents/skills/supabase-postgres-best-practices/*`
+- `AGENT_HANDOFF.md`
+
+**Key decisions**
+- Added Supabase remote SSE MCP server (`https://mcp.supabase.com/mcp?project_ref=xjkbrjlnmwhwdeoqrjsk&features=...`) to global `~/.gemini/config/mcp_config.json` and `~/.gemini/antigravity/mcp_config.json` while preserving existing MCP server configs (`DaVinci Resolve`).
+- Installed official Supabase agent skills (`supabase` and `supabase-postgres-best-practices`) into `.agents/skills/` via `npx skills add supabase/agent-skills --all`, making them natively available to both Codex and Antigravity.
+
+**Verification**
+- Verified JSON syntax and presence of `supabase` and `DaVinci Resolve` in both config locations.
+- Verified skill directories, frontmatter schemas, and documentation files in `.agents/skills/`.
+
+**Known issues**
+- User needs to restart Antigravity to trigger the Supabase OAuth authorization flow.
+
+**Do not undo**
+- Retain the Supabase MCP server configuration and agent skills.
+
+**Next**
+- Restart Antigravity and authenticate with Supabase via the OAuth prompt.
 
 ---
 

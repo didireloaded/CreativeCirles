@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Bookmark,
   Heart,
@@ -112,11 +112,35 @@ export default function Home({
   const [liked, setLiked] = useState<string[]>(() => readLocal("feed-likes", []));
   const [hidden, setHidden] = useState<string[]>(() => readLocal("feed-hidden", []));
   const saved = product.savedItems.filter(item => item.kind === "work").map(item => item.id);
+  const [localPosts] = useState<CreativePost[]>(() => readLocal("feed-local-posts", []));
+  const allPosts = [...localPosts, ...posts];
   const [story, setStory] = useState<number | null>(null);
   const [postMenu, setPostMenu] = useState<string | null>(null);
-  const [selectedPost, setSelectedPost] = useState<CreativePost | null>(null);
-  const [selectedCreator, setSelectedCreator] = useState<Creator | null>(null);
-  const [previewState,setPreviewState] = useState(() => new URLSearchParams(window.location.search).get("state"));
+  const [selectedPost, setSelectedPost] = useState<CreativePost | null>(() => {
+    const params = new URLSearchParams(window.location.search);
+    const postId = params.get("post") || params.get("item");
+    return allPosts.find((p) => p.id === postId) || null;
+  });
+  const [selectedCreator, setSelectedCreator] = useState<Creator | null>(() => {
+    const params = new URLSearchParams(window.location.search);
+    const creatorId = params.get("creator");
+    return creators.find((c) => c.id === creatorId) || null;
+  });
+  const [previewState, setPreviewState] = useState(() => new URLSearchParams(window.location.search).get("state"));
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const postId = params.get("post") || params.get("item");
+    if (postId) {
+      const match = allPosts.find((p) => p.id === postId);
+      if (match) setSelectedPost(match);
+    }
+    const creatorId = params.get("creator");
+    if (creatorId) {
+      const match = creators.find((c) => c.id === creatorId);
+      if (match) setSelectedCreator(match);
+    }
+  }, []);
   const toggle = (
     id: string,
     values: string[],
@@ -253,8 +277,8 @@ export default function Home({
               <span className="sample-label">Sample feed</span>
               {[
                 ...(feed === "Following"
-                  ? posts
-                  : [posts[1], posts[2], posts[0]]),
+                  ? allPosts
+                  : [allPosts[1] || allPosts[0], allPosts[2] || allPosts[0], allPosts[0]].filter(Boolean)),
               ]
                 .filter(
                   (post) => !hidden.includes(post.id) && (category === "All" || post.category === category),
@@ -474,10 +498,11 @@ export default function Home({
         post={selectedPost}
         creator={
           creators.find((creator) => creator.id === selectedPost?.authorId) ||
-          null
+          creators[0]
         }
         onClose={() => setSelectedPost(null)}
         notify={notify}
+        onSelectCreator={(creator) => setSelectedCreator(creator)}
       />
       <CreatorDetail
         open={Boolean(selectedCreator)}
@@ -485,8 +510,19 @@ export default function Home({
         onClose={() => setSelectedCreator(null)}
         onCollaborate={(creator) => {
           setSelectedCreator(null);
-          notify(`Collaboration request to ${creator.name} saved locally.`);
+          const drafts = readLocal<{ id: string; title: string; need: string }[]>("collaboration-posts", []);
+          writeLocal("collaboration-posts", [
+            { id: crypto.randomUUID(), title: `Collaboration with ${creator.name}`, need: creator.role },
+            ...drafts,
+          ]);
+          notify(`Collaboration draft with ${creator.name} ready in Inbox.`);
+          navigate(`inbox?chat=${creator.id}&tab=collaborations`);
         }}
+        onMessage={(creator) => {
+          setSelectedCreator(null);
+          navigate(`inbox?chat=${creator.id}`);
+        }}
+        notify={notify}
       />
       <StoryViewer
         open={story !== null}

@@ -11,6 +11,18 @@
   gap: 12px;
   padding: 18px 22px 0;
 }
+button.detail-author-btn {
+  background: transparent;
+  border: none;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  width: 100%;
+}
+button.detail-author-btn:hover strong {
+  text-decoration: underline;
+}
 .detail-author > .ui-image {
   width: 46px;
   flex: 0 0 46px;
@@ -157,9 +169,19 @@
   gap: 4px;
   color: #9f9297;
 }
-.creator-collaborate {
+.creator-actions-row {
   margin: 12px 22px;
-  width: calc(100% - 44px);
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.creator-actions-row .button {
+  flex: 1;
+  min-width: 140px;
+  margin: 0;
+}
+.creator-collaborate {
+  width: 100%;
 }
 .detail-sheet section {
   padding: 12px 22px;
@@ -253,11 +275,21 @@
   display: flex;
   gap: 16px;
 }
-.community-members > div {
+.community-members > div,
+.community-members > .community-member-btn {
   display: grid;
   justify-items: center;
   gap: 7px;
   font-size: 11px;
+  background: transparent;
+  border: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  padding: 0;
+}
+.community-members > .community-member-btn:hover span {
+  text-decoration: underline;
 }
 .community-members .ui-image {
   width: 50px;
@@ -403,7 +435,8 @@
   display: grid;
   gap: 8px;
 }
-.notification-list article {
+.notification-list article,
+.notification-list .notification-item {
   position: relative;
   display: grid;
   grid-template-columns: 42px 1fr auto;
@@ -411,8 +444,19 @@
   padding: 14px;
   border-radius: 18px;
   background: #ffffff0d;
+  width: 100%;
+  border: none;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.15s ease;
 }
-.notification-list article:not(.is-read):before {
+.notification-list .notification-item:hover {
+  background: #ffffff18;
+}
+.notification-list article:not(.is-read):before,
+.notification-list .notification-item:not(.is-read):before {
   content: "";
   position: absolute;
   left: 5px;
@@ -422,7 +466,8 @@
   border-radius: 50%;
   background: #f5c400;
 }
-.notification-list article > span {
+.notification-list article > span,
+.notification-list .notification-item > span {
   width: 42px;
   height: 42px;
   border-radius: 50%;
@@ -431,14 +476,17 @@
   display: grid;
   place-items: center;
 }
-.notification-list article svg {
+.notification-list article svg,
+.notification-list .notification-item svg {
   width: 19px;
 }
-.notification-list article div {
+.notification-list article div,
+.notification-list .notification-item div {
   display: grid;
   gap: 4px;
 }
-.notification-list article p {
+.notification-list article p,
+.notification-list .notification-item p {
   margin: 0;
   color: #b7aaae;
   font-size: 12px;

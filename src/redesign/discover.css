@@ -110,6 +110,8 @@
 .ds-detail-body h2{font-family:'DM Sans',sans-serif;font-size:40px;line-height:1.06;letter-spacing:-.05em;font-weight:500;margin:0 0 20px}
 .ds-detail-description{font-size:14px;line-height:1.65;color:var(--muted);margin:0 0 28px}
 .ds-detail-author{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:28px}
+.ds-detail-author-btn{background:none;border:none;padding:0;text-align:left;cursor:pointer;font:inherit;color:inherit}
+.ds-detail-author-btn:hover strong{text-decoration:underline}
 .ds-detail-author .avatar{width:44px;height:44px;border-radius:50%;object-fit:cover;flex:none}
 .ds-detail-author>div{display:flex;flex-direction:column;gap:3px}
 .ds-detail-author strong{font-size:13px;font-weight:600}

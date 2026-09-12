@@ -30,6 +30,7 @@ interface TasksProps {
   profile: OnboardingProfile;
   pendingDraft: TaskDraft | null;
   onDraftConsumed: () => void;
+  navigate?: (page: string) => void;
 }
 
 type TaskView = "Today" | "All tasks" | "Progress";
@@ -42,6 +43,7 @@ export default function Tasks({
   profile,
   pendingDraft,
   onDraftConsumed,
+  navigate,
 }: TasksProps) {
   const [tasks, setTasks] = useState<CreativeTask[]>(readTasks);
   const [view, setView] = useState<TaskView>("Today");
@@ -495,6 +497,7 @@ export default function Tasks({
           task={selectedTask}
           onClose={() => setSelected(null)}
           onChange={updateTask}
+          navigate={navigate}
         />
       )}
     </main>

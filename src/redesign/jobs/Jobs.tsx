@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   ArrowLeft,
   ArrowUpRight,
@@ -21,7 +21,7 @@ export default function Jobs({
   navigate,
 }: {
   notify: (message: string) => void;
-  navigate: (page: Page) => void;
+  navigate: (page: Page | string) => void;
 }) {
   const { state, toggleSaved } = useProductDomain();
   const [listings, setListings] = useLocalState<Job[]>("job-listings", []);
@@ -33,6 +33,17 @@ export default function Jobs({
   const [selected, setSelected] = useState<Job | null>(() => [...listings, ...jobs].find(job => job.id === new URLSearchParams(location.search).get("item")) || null);
   const [applying, setApplying] = useState(false);
   const [view, setView] = useState<"Browse" | "Applicants">("Browse");
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("create") === "true") {
+      setEditor(true);
+    }
+    const viewParam = params.get("view");
+    if (viewParam?.toLowerCase() === "applicants") {
+      setView("Applicants");
+    }
+  }, []);
   const filtered = useMemo(
     () =>
       [...listings, ...jobs].filter(
