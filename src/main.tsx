@@ -6,6 +6,7 @@ import './redesign/global.css';
 import './redesign/reference.css';
 import './redesign/components/components.css';
 import './redesign/details/details.css';
+import './redesign/offwhite.css';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode><BrowserRouter><App /></BrowserRouter></React.StrictMode>,

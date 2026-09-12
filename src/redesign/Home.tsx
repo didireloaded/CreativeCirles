@@ -6,8 +6,9 @@ import {
   MoreHorizontal,
   Play,
   Plus,
+  PlusCircle,
   Share2,
-  Sparkles,
+  LayoutDashboard,
   ArrowUpRight,
   BadgeCheck,
   EyeOff,
@@ -153,7 +154,7 @@ export default function Home({
             aria-label="My workspace"
             onClick={() => navigate("workspace")}
           >
-            <Sparkles size={20} />
+            <LayoutDashboard size={20} />
           </button>
         </div>
       </header>
@@ -306,7 +307,7 @@ export default function Home({
                             notify("You will see more work like this.");
                           }}
                         >
-                          <Sparkles size={15} /> Show more like this
+                          <PlusCircle size={15} /> Show more like this
                         </button>
                         <button
                           onClick={() => {

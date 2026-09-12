@@ -30,6 +30,19 @@ describe('Tasks experience', () => {
     expect(screen.getByText('2 of 2 steps complete')).toBeVisible();
   });
 
+  it('navigates the full month calendar and selects a day', async () => {
+    const user = userEvent.setup();
+    render(<Tasks notify={vi.fn()} profile={defaultOnboardingProfile} pendingDraft={null} onDraftConsumed={vi.fn()} />);
+
+    const currentMonth = new Date().toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
+    expect(screen.getByRole('region', { name: 'Full task calendar' })).toBeVisible();
+    expect(screen.getByRole('heading', { name: currentMonth })).toBeVisible();
+    await user.click(screen.getByRole('button', { name: 'Next month' }));
+    expect(screen.queryByRole('heading', { name: currentMonth })).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Go to today' }));
+    expect(screen.getByRole('heading', { name: currentMonth })).toBeVisible();
+  });
+
   it('preserves a one-time contextual draft until it is submitted', async () => {
     const user = userEvent.setup();
     function ContextualTasks() {

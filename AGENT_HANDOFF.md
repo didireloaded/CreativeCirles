@@ -152,6 +152,36 @@ Complete the remaining frontend product surface from the approved feature invent
 
 ---
 
+### 2026-09-12 — Codex
+
+**Task**
+Unify the application around an off-white visual system, replace the compact Tasks date strip with a full calendar, and remove visible assistant/model branding.
+
+**Changed**
+- `src/redesign/offwhite.css` centralizes the new off-white background, surface, ink, line, accent, sheet, navigation, and secondary-module overrides.
+- `src/redesign/tasks/Tasks.tsx` and `tasks.css` now provide a six-week monthly calendar with month navigation, Today reset, date selection, task counts, and selected-day agenda filtering.
+- Creative Tools now labels the background drafting capability as “Drafting Studio” with neutral notebook iconography; visible AI/intelligence language and sparkle-as-assistant branding were removed.
+- Updated affected tests and UI iconography across Home, Discover, Workspace, Profile, notifications, opportunity, and creator-detail surfaces.
+
+**Verification**
+- `npm test` — 63 tests passed across 22 test files.
+- `npm run typecheck`, `npm run lint`, and `npm run build` — passed.
+- Playwright verified all eight Creative Tools routes, no visible AI/intelligence wording in Drafting Studio, and previous/next/Today calendar behavior.
+- Responsive renders inspected at 390px mobile, 768px tablet, and 1280px desktop.
+
+**Known issues**
+- The internal route/component filename remains `ai-studio`/`AiStudio` for compatibility; neither is exposed as interface copy.
+- Backend-dependent actions remain local-preview behavior until the backend phase.
+
+**Do not undo**
+- Preserve Workspace as the dashboard and Tasks as a separate planning destination.
+- Keep assistant capabilities unbranded and in the background.
+
+**Next**
+- Continue the backend integration against these verified UI contracts.
+
+---
+
 ### YYYY-MM-DD — Agent Name
 
 **Task**
