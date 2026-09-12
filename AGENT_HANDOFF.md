@@ -116,6 +116,42 @@ Implement the complete Marketplace frontend slice.
 
 ---
 
+### 2026-09-12 — Codex
+
+**Task**
+Complete the remaining frontend product surface from the approved feature inventory, excluding live payments and backend behavior.
+
+**Changed**
+- Added dedicated Projects, Creative Buzz, Skill Swap, Saved, AI Studio, and Creator Business modules.
+- Added home-feed discipline filters and extended the radial create flow without placing a background behind its primary options.
+- Added community rules, pinned guidance, local posting, mute, and report controls.
+- Added local message attachments, voice-note drafts, mark-unread, mute, archive, and call-preview entry points.
+
+**Key decisions**
+- UI actions that require the future backend are clearly labeled as local previews and never claim a real submission, upload, payment, or moderation outcome.
+- Payments remain excluded; business pricing, products, memberships, tips, and revenue are presentation/management previews only.
+- Dashboard, Tasks, and Projects remain separate destinations with intentional links between related work.
+
+**Verification**
+- `npm test` — 62 tests passed across 22 test files.
+- `npm run typecheck` — passed.
+- `npm run lint` — passed.
+- `npm run build` — passed.
+- Browser inspection confirmed the discipline controls, clean radial create menu, and extended creation sheet at mobile width.
+
+**Known issues**
+- Live auth/session enforcement, uploads, realtime chat/calls, AI generation, moderation, notifications, geolocation, application submission, and payments require the backend phase.
+- The extended creation forms persist as preview drafts; production publishing waits for backend services and policies.
+
+**Do not undo**
+- Preserve the Creative Circle visual system, explicit preview labeling, and payment exclusion.
+- Do not merge Dashboard, Tasks, and Projects into one route.
+
+**Next**
+- Connect the verified frontend contracts to Supabase module by module, beginning with auth/profile and community feed reads.
+
+---
+
 ### YYYY-MM-DD — Agent Name
 
 **Task**
