@@ -182,6 +182,36 @@ Unify the application around an off-white visual system, replace the compact Tas
 
 ---
 
+### 2026-09-12 — Codex
+
+**Task**
+Restore a colorful product identity without replacing the approved off-white application foundation, and repair the profile's white-on-white contrast regression.
+
+**Changed**
+- `src/redesign/offwhite.css` now defines a reusable coral, saffron, sky, mint, lilac, and rose accent palette.
+- Creative Tools cards, Tasks summary cards, secondary destination heroes, and mobile navigation regain distinct color while keeping dark readable typography.
+- Profile media is image-led again, with a colorful fallback; profile actions, stats, biography, metadata, tabs, and gallery fallbacks now have explicit accessible foreground/background pairings.
+
+**Key decisions**
+- Preserve off-white as the shared canvas and use color for navigation, feature identity, state, and media rather than turning the entire interface dark.
+- Keep all existing routes, behavior, and component architecture unchanged; this is a central visual-system correction only.
+
+**Verification**
+- `npm run typecheck`, `npm run lint`, `npm test -- --run`, and `npm run build` passed; 63 tests passed across 22 files.
+- Live mobile browser inspection confirmed readable profile identity/actions/stats/tabs and correctly loaded portfolio imagery.
+- Live mobile browser inspection confirmed all eight Creative Tools cards have distinct accessible colors and the navigation remains legible.
+
+**Known issues**
+- Backend-dependent behavior remains local-preview functionality until the backend phase.
+
+**Do not undo**
+- Keep the off-white canvas and the colorful accent hierarchy together; neither the previous monochrome override nor a global black background matches the approved direction.
+
+**Next**
+- Continue backend integration against the verified visual and interaction contracts.
+
+---
+
 ### YYYY-MM-DD — Agent Name
 
 **Task**
