@@ -14,7 +14,8 @@ import {
 import { photos } from "./data";
 import type { ScreenProps } from "./types";
 import Modal from "./Modal";
-import { readLocal, writeLocal } from "./storage";
+import { persistOnboarding } from "./onboarding/model";
+import BottomSheet from "./components/BottomSheet";
 import "./profile.css";
 
 const profileImages = [
@@ -32,22 +33,30 @@ export default function Profile({
   profile,
   editPreferences,
   openTaskDraft,
+  updateProfile,
 }: ScreenProps) {
   const [tab, setTab] = useState<"Work" | "Projects" | "About">("Work");
   const [edit, setEdit] = useState(false);
-  const [saved, setSaved] = useState(() =>
-    readLocal("profile", {
+  const [saved, setSaved] = useState(() => ({
       name: profile.displayName || "Jordan K.",
       bio:
         profile.bio ||
         "Visual storyteller. Finding quiet frames in loud places.",
-    }),
-  );
+      handle: profile.handle || "jordan.creates",
+      location: profile.location || "",
+      avatarDataUrl: profile.avatarDataUrl || "",
+    }));
   const [form, setForm] = useState(saved);
+  const [work, setWork] = useState<string | null>(null);
+  const [error, setError] = useState("");
   const save = (e: React.FormEvent) => {
     e.preventDefault();
+    const next = { ...profile, displayName: form.name.trim(), bio: form.bio.trim(), handle: form.handle, location: form.location, avatarDataUrl: form.avatarDataUrl };
+    if (!(updateProfile ? updateProfile(next) : persistOnboarding(next))) {
+      setError("Couldn’t save your profile. Try a smaller photo or free some browser storage.");
+      return;
+    }
     setSaved(form);
-    writeLocal("profile", form);
     setEdit(false);
     notify("Profile preview saved on this device.");
   };
@@ -65,7 +74,7 @@ export default function Profile({
         </button>
         <div className="pf-identity">
           <img
-            src={profile.avatarDataUrl || photos.portrait}
+            src={saved.avatarDataUrl || photos.portrait}
             alt="Your profile portrait"
           />
           <div>
@@ -76,13 +85,13 @@ export default function Profile({
               {saved.name}
               <Check aria-label="Sample verified badge" />
             </h1>
-            <p>@{profile.handle || "jordan.creates"}</p>
+            <p>@{saved.handle}</p>
           </div>
         </div>
       </header>
       <main className="pf-content">
         <div className="pf-actions">
-          <button className="button primary" onClick={() => setEdit(true)}>
+          <button className="button primary" onClick={() => { setForm(saved); setError(""); setEdit(true); }}>
             <Pencil size={16} /> Edit profile
           </button>
           <button
@@ -101,7 +110,7 @@ export default function Profile({
         <p className="pf-bio">{saved.bio}</p>
         <div className="pf-meta">
           <span>
-            <MapPin /> Namibia
+            <MapPin /> {saved.location || "Add your location"}
           </span>
           <span>
             <LinkIcon /> Portfolio link · sample
@@ -139,11 +148,8 @@ export default function Profile({
               {profileImages.map((p, i) => (
                 <button
                   key={p}
-                  onClick={() =>
-                    notify(
-                      `Opened sample work ${i + 1}. Full media viewer comes with content integration.`,
-                    )
-                  }
+                  onClick={() => setWork(p)}
+                  aria-label={`View creative work ${i + 1}`}
                 >
                   <img src={p} alt={`Sample creative work ${i + 1}`} />
                 </button>
@@ -164,9 +170,7 @@ export default function Profile({
               <button
                 className="button primary"
                 onClick={() =>
-                  notify(
-                    "Project detail will connect during the project-post phase.",
-                  )
+                  navigate("projects")
                 }
               >
                 View project <ArrowUpRight size={16} />
@@ -211,9 +215,21 @@ export default function Profile({
           </section>
         )}
       </main>
+      <BottomSheet open={Boolean(work)} title="Creative work" onClose={() => setWork(null)}>
+        {work && <img src={work} alt="Selected portfolio work" style={{ width: "100%", borderRadius: 20 }} />}
+      </BottomSheet>
       {edit && (
         <Modal title="Edit profile preview" onClose={() => setEdit(false)}>
           <form className="pf-form" onSubmit={save}>
+            <label>Profile photo<input type="file" accept="image/*" onChange={event => {
+              const file = event.target.files?.[0];
+              if (!file) return;
+              if (!file.type.startsWith("image/") || file.size > 2 * 1024 * 1024) { setError("Choose an image smaller than 2 MB."); return; }
+              const reader = new FileReader();
+              reader.onload = () => { if (typeof reader.result === "string") setForm(current => ({ ...current, avatarDataUrl: reader.result as string })); setError(""); };
+              reader.onerror = () => setError("Couldn’t read that photo. Choose another image.");
+              reader.readAsDataURL(file);
+            }} /></label>
             <label>
               Display name
               <input
@@ -223,6 +239,8 @@ export default function Profile({
                 required
               />
             </label>
+            <label>Handle<input value={form.handle} pattern="[a-z0-9._]{3,30}" required onChange={e => setForm({ ...form, handle: e.target.value })} /></label>
+            <label>Location<input value={form.location} maxLength={80} onChange={e => setForm({ ...form, location: e.target.value })} /></label>
             <label>
               Short bio
               <textarea
@@ -233,6 +251,7 @@ export default function Profile({
               />
             </label>
             <p>Changes stay on this device until profile integration begins.</p>
+            {error && <p role="alert">{error}</p>}
             <button className="button primary" type="submit">
               Save changes
             </button>

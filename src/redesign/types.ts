@@ -9,6 +9,7 @@ export interface ScreenProps {
   openCreate: () => void;
   openDrafts: () => void;
   profile: OnboardingProfile;
+  updateProfile?: (profile: OnboardingProfile) => boolean;
   editPreferences: () => void;
   openNotifications: () => void;
   openTaskDraft: (draft: TaskDraft) => void;

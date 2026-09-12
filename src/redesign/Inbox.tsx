@@ -19,6 +19,7 @@ import { creators, photos } from "./data";
 import CallPreview, { type CallMode } from "./calls/CallPreview";
 import type { ScreenProps } from "./types";
 import "./inbox.css";
+import { useLocalState } from "./storage";
 
 interface PreviewMessage {
   id: string;
@@ -192,13 +193,18 @@ export default function Inbox({ notify, openTaskDraft }: ScreenProps) {
   const [collabTitle, setCollabTitle] = useState("");
   const [callMode, setCallMode] = useState<CallMode | null>(null);
   const [conversationMenu, setConversationMenu] = useState(false);
+  const [archived,setArchived] = useLocalState<string[]>("archived-conversations",[]);
+  const [muted,setMuted] = useLocalState<string[]>("muted-conversations",[]);
+  const [showArchived,setShowArchived] = useState(false);
+  const [collabNeed,setCollabNeed] = useState("");
+  const [collabPosts,setCollabPosts] = useLocalState<{id:string;title:string;need:string}[]>("collaboration-posts",[]);
   const attachmentInput = useRef<HTMLInputElement>(null);
   const messagesEnd = useRef<HTMLDivElement>(null);
   const active =
     conversations.find((conversation) => conversation.id === activeId) ||
     conversations[0];
   const filtered = conversations.filter((conversation) =>
-    `${conversation.name} ${conversation.role} ${conversation.title}`
+    (showArchived ? archived.includes(conversation.id) : !archived.includes(conversation.id)) && `${conversation.name} ${conversation.role} ${conversation.title}`
       .toLowerCase()
       .includes(search.toLowerCase()),
   );
@@ -354,7 +360,8 @@ export default function Inbox({ notify, openTaskDraft }: ScreenProps) {
               ))}
             </div>
             <div className="in-list-title">
-              <h2>All messages</h2>
+              <h2>{showArchived ? "Archived messages" : "All messages"}</h2>
+              <button className="button secondary" onClick={()=>setShowArchived(!showArchived)}>{showArchived ? "All messages" : "Archived"}</button>
               <span>{filtered.length}</span>
             </div>
             <div className="in-message-list">
@@ -451,7 +458,7 @@ export default function Inbox({ notify, openTaskDraft }: ScreenProps) {
                 <ListPlus size={19} />
               </button>
               <button className="icon-button" aria-label="Conversation options" aria-expanded={conversationMenu} onClick={() => setConversationMenu(!conversationMenu)}><MoreHorizontal /></button>
-              {conversationMenu && <div className="in-conversation-menu"><button onClick={() => { notify("Conversation muted on this device."); setConversationMenu(false); }}>Mute notifications</button><button onClick={() => { setConversations(current => current.map(item => item.id === active.id ? { ...item, unread: 1 } : item)); notify("Conversation marked unread."); setConversationMenu(false); }}>Mark unread</button><button onClick={() => { notify("Conversation archived in this preview."); setConversationMenu(false); }}>Archive conversation</button></div>}
+              {conversationMenu && <div className="in-conversation-menu"><button onClick={() => { setMuted(current=>current.includes(active.id)?current.filter(id=>id!==active.id):[...current,active.id]); setConversationMenu(false); }}>{muted.includes(active.id)?"Unmute notifications":"Mute notifications"}</button><button onClick={() => { setConversations(current => current.map(item => item.id === active.id ? { ...item, unread: 1 } : item)); setConversationMenu(false); }}>Mark unread</button><button onClick={() => { setArchived(current=>current.includes(active.id)?current.filter(id=>id!==active.id):[...current,active.id]); setMobileOpen(false); setConversationMenu(false); }}>{archived.includes(active.id)?"Restore conversation":"Archive conversation"}</button></div>}
             </header>
             <div className="in-message-thread" ref={messagesEnd}>
               <div className="in-conversation-intro">
@@ -540,13 +547,15 @@ export default function Inbox({ notify, openTaskDraft }: ScreenProps) {
               {showCollabComposer ? "Close composer" : "Post a collaboration"}
             </button>
           </div>
+          {collabPosts.map(post=><article className="in-request" key={post.id}><div className="in-request-content"><p className="eyebrow">YOUR LOCAL DRAFT</p><h3>{post.title}</h3><p>Looking for {post.need}</p><button className="button secondary" onClick={()=>{setCollabTitle(post.title);setCollabNeed(post.need);setShowCollabComposer(true);}}>Use as new draft</button></div></article>)}
           {showCollabComposer && (
             <form
               className="in-collab-composer"
               onSubmit={(event) => {
                 event.preventDefault();
                 if (!collabTitle.trim()) return;
-                notify("Collaboration post saved in this preview.");
+                setCollabPosts(current=>[{id:crypto.randomUUID(),title:collabTitle,need:collabNeed},...current]);
+                notify("Collaboration draft saved on this device.");
                 setCollabTitle("");
                 setShowCollabComposer(false);
               }}
@@ -562,7 +571,7 @@ export default function Inbox({ notify, openTaskDraft }: ScreenProps) {
               </label>
               <label>
                 What kind of collaborator do you need?
-                <input placeholder="e.g. Sound designer or editor" required />
+                <input placeholder="e.g. Sound designer or editor" required value={collabNeed} onChange={event=>setCollabNeed(event.target.value)} />
               </label>
               <button className="button primary" type="submit">
                 Post collaboration

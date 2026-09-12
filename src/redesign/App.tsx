@@ -40,6 +40,7 @@ import { CreativeBuzz, SkillSwap } from "./opportunities/Opportunities";
 import SavedItems from "./saved/SavedItems";
 import AiStudio from "./ai/AiStudio";
 import BusinessHub from "./business/BusinessHub";
+import { photos } from "./data";
 
 const notificationItems: NotificationItem[] = [
   {
@@ -89,6 +90,11 @@ export default function App() {
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [toast, setToast] = useState("");
   const [navCompact, setNavCompact] = useState(false);
+  useEffect(() => {
+    const onStorageError = () => setToast("Browser storage is full. This change is available for this visit only.");
+    window.addEventListener("circle:storage-error", onStorageError);
+    return () => window.removeEventListener("circle:storage-error", onStorageError);
+  }, []);
   const page = pathPage(location.pathname);
   useEffect(() => {
     if (entry !== "app") return;
@@ -156,6 +162,11 @@ export default function App() {
     openCreate: () => setCreate("create"),
     openDrafts: () => setCreate("drafts"),
     profile,
+    updateProfile: (next) => {
+      if (!persistOnboarding(next)) return false;
+      setProfile(next);
+      return true;
+    },
     editPreferences,
     openNotifications: () => setNotificationsOpen(true),
     openTaskDraft,
@@ -241,7 +252,7 @@ export default function App() {
             <img
               src={
                 profile.avatarDataUrl ||
-                "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80"
+                photos.portrait
               }
               alt=""
             />
@@ -276,7 +287,7 @@ export default function App() {
             <img
               src={
                 profile.avatarDataUrl ||
-                "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80"
+                photos.portrait
               }
               alt=""
             />
@@ -320,13 +331,13 @@ export default function App() {
           ) : page === "projects" ? (
             <Projects notify={setToast} navigate={navigate} />
           ) : page === "buzz" ? (
-            <CreativeBuzz notify={setToast} navigate={navigate} />
+            <CreativeBuzz notify={setToast} navigate={navigate} openTaskDraft={openTaskDraft} />
           ) : page === "skill-swap" ? (
             <SkillSwap notify={setToast} navigate={navigate} />
           ) : page === "saved" ? (
             <SavedItems navigate={navigate} />
           ) : page === "ai-studio" ? (
-            <AiStudio notify={setToast} navigate={navigate} />
+            <AiStudio notify={setToast} navigate={navigate} openTaskDraft={openTaskDraft} />
           ) : page === "business" ? (
             <BusinessHub notify={setToast} navigate={navigate} />
           ) : isSecondaryPage(page) ? (

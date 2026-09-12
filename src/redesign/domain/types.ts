@@ -4,6 +4,7 @@ export interface SavedItem {
   id: string;
   kind: SavedKind;
   title: string;
+  content?: string;
 }
 
 export interface ProductProject {

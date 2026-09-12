@@ -12,6 +12,9 @@ import {
 import { useProductDomain } from "../domain/useProductDomain";
 import type { Page } from "../types";
 import "./opportunities.css";
+import { useLocalState } from "../storage";
+import BottomSheet from "../components/BottomSheet";
+import type { TaskDraft } from "../tasks/model";
 
 const buzz = [
   {
@@ -57,16 +60,18 @@ const swaps = [
 export function CreativeBuzz({
   notify,
   navigate,
+  openTaskDraft,
 }: {
   notify: (message: string) => void;
   navigate: (page: Page) => void;
+  openTaskDraft?: (draft:TaskDraft)=>void;
 }) {
   const { state, toggleSaved } = useProductDomain();
   const [type, setType] = useState("All");
-  const [place, setPlace] = useState("Windhoek");
+  const [place, setPlace] = useState("All locations");
   const list = useMemo(
-    () => buzz.filter((item) => type === "All" || item.type === type),
-    [type],
+    () => buzz.filter((item) => (type === "All" || item.type === type) && (place === "All locations" || item.where === place || (place === "Remote" && item.where === "Online"))),
+    [type,place],
   );
   return (
     <main className="opp-page">
@@ -111,7 +116,9 @@ export function CreativeBuzz({
             value={place}
             onChange={(event) => setPlace(event.target.value)}
           >
+            <option>All locations</option>
             <option>Windhoek</option>
+            <option>Southern Africa</option>
             <option>Swakopmund</option>
             <option>Remote</option>
           </select>
@@ -129,6 +136,7 @@ export function CreativeBuzz({
         </button>
       </section>
       <section className="opp-grid">
+        {!list.length && <p>No opportunities match this location. Try All locations.</p>}
         {list.map((item) => {
           const saved = state.savedItems.some(
             (value) => value.kind === "opportunity" && value.id === item.id,
@@ -162,9 +170,7 @@ export function CreativeBuzz({
                 </button>
                 <button
                   className="button primary"
-                  onClick={() =>
-                    notify("Reminder and linked task draft created locally.")
-                  }
+                  onClick={() => openTaskDraft ? openTaskDraft({source:"event",relatedId:item.id,title:`Prepare for ${item.title}`}) : navigate("tasks")}
                 >
                   <CalendarPlus />
                   Plan it
@@ -185,7 +191,11 @@ export function SkillSwap({
   notify: (message: string) => void;
   navigate: (page: Page) => void;
 }) {
-  const [proposed, setProposed] = useState<string[]>([]);
+  const [proposed, setProposed] = useLocalState<string[]>("swap-proposals",[]);
+  const [offer,setOffer] = useLocalState("swap-offer",{skill:"photography",details:"Available for one half-day collaboration this month."});
+  const [editing,setEditing] = useState(false);
+  const [form,setForm] = useState(offer);
+  const [query,setQuery] = useState("");
   return (
     <main className="opp-page">
       <header className="opp-hero swap-hero">
@@ -209,14 +219,12 @@ export function SkillSwap({
       <div className="swap-compose">
         <div>
           <p className="eyebrow">YOUR OFFER</p>
-          <h2>I can offer photography</h2>
-          <p>Available for one half-day collaboration this month.</p>
+          <h2>I can offer {offer.skill}</h2>
+          <p>{offer.details}</p>
         </div>
         <button
           className="button secondary"
-          onClick={() =>
-            notify("Your skill-swap offer is editable in this local preview.")
-          }
+          onClick={() => {setForm(offer);setEditing(true);}}
         >
           Edit offer
         </button>
@@ -227,10 +235,12 @@ export function SkillSwap({
           type="search"
           placeholder="Search skills you need"
           aria-label="Search skill swaps"
+          value={query}
+          onChange={e=>setQuery(e.target.value)}
         />
       </label>
       <section className="swap-list">
-        {swaps.map((item) => (
+        {swaps.filter(item=>`${item.offer} ${item.need} ${item.name}`.toLowerCase().includes(query.toLowerCase())).map((item) => (
           <article key={item.id}>
             <div>
               <span>{item.name}</span>
@@ -242,14 +252,14 @@ export function SkillSwap({
             <button
               className={`button ${proposed.includes(item.id) ? "secondary" : "primary"}`}
               onClick={() => {
-                setProposed((previous) => [...previous, item.id]);
-                notify(`Swap proposal with ${item.name} saved locally.`);
+                setProposed((previous) => previous.includes(item.id) ? previous.filter(id=>id!==item.id) : [...previous, item.id]);
+                notify("Swap proposal draft updated on this device.");
               }}
             >
               {proposed.includes(item.id) ? (
                 <>
                   <Check />
-                  Proposed
+                  Draft saved · undo
                 </>
               ) : (
                 <>Propose swap</>
@@ -264,6 +274,7 @@ export function SkillSwap({
           </article>
         ))}
       </section>
+      <BottomSheet open={editing} title="Your skill-swap offer" onClose={()=>setEditing(false)}><form className="product-editor" onSubmit={e=>{e.preventDefault();setOffer(form);setEditing(false);}}><label>Skill you offer<input required value={form.skill} onChange={e=>setForm({...form,skill:e.target.value})}/></label><label>Scope and availability<textarea required value={form.details} onChange={e=>setForm({...form,details:e.target.value})}/></label><button className="button primary">Save offer</button></form></BottomSheet>
     </main>
   );
 }

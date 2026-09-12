@@ -1,5 +1,5 @@
 import { createSeedProductState } from './seeds';
-import type { ProductState, SavedItem } from './types';
+import type { ProductState, SavedItem, ProductProject } from './types';
 
 export const productStorageKey = 'circle:product-domain-v1';
 type Listener = () => void;
@@ -37,6 +37,10 @@ export function createProductRepository() {
     toggleSaved(item: SavedItem) {
       const exists = state.savedItems.some(saved => saved.id === item.id && saved.kind === item.kind);
       state = { ...state, savedItems: exists ? state.savedItems.filter(saved => saved.id !== item.id || saved.kind !== item.kind) : [...state.savedItems, { ...item }] };
+      persist();
+    },
+    updateProject(project: ProductProject) {
+      state = { ...state, projects: state.projects.some(item => item.id === project.id) ? state.projects.map(item => item.id === project.id ? {...project} : item) : [...state.projects, {...project}] };
       persist();
     },
     reset() { state = createSeedProductState(); persist(); },

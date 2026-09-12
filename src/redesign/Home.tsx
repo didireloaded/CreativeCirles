@@ -24,6 +24,8 @@ import PostDetail from "./details/PostDetail";
 import CreatorDetail from "./details/CreatorDetail";
 import StoryViewer, { type Story } from "./details/StoryViewer";
 import "./home.css";
+import { readLocal, writeLocal } from "./storage";
+import { useProductDomain } from "./domain/useProductDomain";
 
 const posts: CreativePost[] = [
   {
@@ -102,16 +104,19 @@ export default function Home({
   openCreate,
   openNotifications,
   openTaskDraft,
+  profile,
 }: ScreenProps) {
+  const { state: product, toggleSaved } = useProductDomain();
   const [feed, setFeed] = useState<"Following" | "Discover">("Following");
   const [category, setCategory] = useState("All");
-  const [liked, setLiked] = useState<string[]>([]);
-  const [saved, setSaved] = useState<string[]>([]);
+  const [liked, setLiked] = useState<string[]>(() => readLocal("feed-likes", []));
+  const [hidden, setHidden] = useState<string[]>(() => readLocal("feed-hidden", []));
+  const saved = product.savedItems.filter(item => item.kind === "work").map(item => item.id);
   const [story, setStory] = useState<number | null>(null);
   const [postMenu, setPostMenu] = useState<string | null>(null);
   const [selectedPost, setSelectedPost] = useState<CreativePost | null>(null);
   const [selectedCreator, setSelectedCreator] = useState<Creator | null>(null);
-  const previewState = new URLSearchParams(window.location.search).get("state");
+  const [previewState,setPreviewState] = useState(() => new URLSearchParams(window.location.search).get("state"));
   const toggle = (
     id: string,
     values: string[],
@@ -120,18 +125,19 @@ export default function Home({
   ) => {
     const active = values.includes(id);
     setter(active ? values.filter((x) => x !== id) : [...values, id]);
+    writeLocal("feed-likes", active ? values.filter(x => x !== id) : [...values, id]);
     notify(active ? `${label} removed.` : `${label} saved on this device.`);
   };
   return (
     <div className="home-page">
       <header className="home-top">
         <button className="home-identity" onClick={() => navigate("profile")}>
-          <img src={photos.portrait} alt="Your profile" />
+          <img src={profile.avatarDataUrl || photos.portrait} alt="Your profile" />
           <span>
             <strong>
-              Jordan K. <BadgeCheck size={16} />
+              {profile.displayName || "Jordan K."} <BadgeCheck size={16} />
             </strong>
-            <small>@jordan.creates</small>
+            <small>@{profile.handle || "jordan.creates"}</small>
           </span>
         </button>
         <div className="home-header-actions">
@@ -198,7 +204,7 @@ export default function Home({
         onClick={openCreate}
         aria-label="Share what is on your mind"
       >
-        <img src={photos.portrait} alt="" />
+        <img src={profile.avatarDataUrl || photos.portrait} alt="" />
         <span>What’s on your mind?</span>
         <Plus size={19} />
       </button>
@@ -231,9 +237,7 @@ export default function Home({
             <ErrorState
               title="Couldn’t load creative work"
               description="Check your connection and try again."
-              onRetry={() =>
-                window.history.replaceState({}, "", window.location.pathname)
-              }
+              onRetry={() => { window.history.replaceState({}, "", window.location.pathname); setPreviewState(null); }}
             />
           ) : previewState === "empty" ? (
             <EmptyState
@@ -253,7 +257,7 @@ export default function Home({
                   : [posts[1], posts[2], posts[0]]),
               ]
                 .filter(
-                  (post) => category === "All" || post.category === category,
+                  (post) => !hidden.includes(post.id) && (category === "All" || post.category === category),
                 )
                 .map((post) => (
                 <article className="post" key={post.id}>
@@ -304,7 +308,7 @@ export default function Home({
                         <button
                           onClick={() => {
                             setPostMenu(null);
-                            notify("You will see more work like this.");
+                            setCategory(post.category);
                           }}
                         >
                           <PlusCircle size={15} /> Show more like this
@@ -312,7 +316,10 @@ export default function Home({
                         <button
                           onClick={() => {
                             setPostMenu(null);
-                            notify("This post was hidden in the preview.");
+                            const next = [...hidden, post.id];
+                            setHidden(next);
+                            writeLocal("feed-hidden", next);
+                            notify("Post hidden on this device.");
                           }}
                         >
                           <EyeOff size={15} /> Hide this post
@@ -401,7 +408,7 @@ export default function Home({
                       </button>
                       <button
                         onClick={() =>
-                          toggle(post.id, saved, setSaved, "Inspiration")
+                          toggleSaved({ id: post.id, kind: "work", title: post.title })
                         }
                         className={saved.includes(post.id) ? "active save" : ""}
                         aria-pressed={saved.includes(post.id)}
@@ -417,6 +424,7 @@ export default function Home({
                   </div>
                 </article>
                 ))}
+              {hidden.length > 0 && <button className="button secondary" onClick={()=>{setHidden([]);writeLocal("feed-hidden",[]);}}>Restore hidden posts ({hidden.length})</button>}
               {category !== "All" &&
                 !posts.some((post) => post.category === category) && (
                   <EmptyState
@@ -461,6 +469,7 @@ export default function Home({
         </aside>
       </div>
       <PostDetail
+        key={selectedPost?.id || "closed"}
         open={Boolean(selectedPost)}
         post={selectedPost}
         creator={
